@@ -1,0 +1,11 @@
+{
+  "name": "geo-api-proxy-run",
+  "version": "1.0.0",
+  "description": "A proxy for GSI API on Cloud Run.",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "1.6.8",
+    "cors": "2.8.5",
+    "express": "4.19.2"
+  }
+}

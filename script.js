@@ -1,0 +1,301 @@
+$(document).ready(function(){
+    const DEBUG_FLAG = true;
+    let dayCount = 0;
+    let prefectures = {}; 
+
+    const API_ENDPOINT = 'https://geo-api-proxy-160651572780.asia-northeast1.run.app'; // ★★★ あなたのCloud RunのURLをここに設定 ★★★
+
+    const dayTemplate = Handlebars.compile($('#day-plan-template').html());
+    const placeTemplate = Handlebars.compile($('#place-input-template').html());
+    const markdownTemplate = Handlebars.compile($('#markdown-template').html());
+
+    const prefixes = [
+        '花の', '煌びやかな', '伝説の', '究極の', '月影の', '星屑の',
+        '暁の', '至高の', '神速の', '冒険の', '真・', '最終奥義', '風の'
+    ];
+    const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    $('#version-info').text(`${randomPrefix}出発地設定・複数日対応版 (Ver. FINAL-STABLE)`);
+    
+    function fetchPrefectures() {
+        return $.getJSON(`${API_ENDPOINT}?api=prefectures`).done(function(data){
+            prefectures = data;
+        }).fail(function(){
+            alert('都道府県データの取得に失敗しました。APIエンドポイントのURLが正しいか確認してください。');
+        });
+    }
+
+    function addDay(data = {}) {
+        dayCount++;
+        const prefArray = Object.keys(prefectures).map(code => ({ code: code, name: prefectures[code] }));
+        const context = { dayNumber: dayCount, prefectures: prefArray };
+        const dayHtml = dayTemplate(context);
+        const $newDay = $(dayHtml);
+        
+        $newDay.find('.travel-date').val(data.date || '');
+        
+        if(data.area) {
+            const prefName = data.area;
+            const prefCode = Object.keys(prefectures).find(key => prefectures[key] === prefName);
+            if (prefCode) {
+                $newDay.find('.prefecture-select').val(prefCode);
+                // 市町村の反映は、API呼び出しが完了した後に行う必要があるため、
+                // triggerに渡すデータとしてcityを渡す
+                if (data.city) {
+                    setTimeout(() => {
+                         $newDay.find('.prefecture-select').trigger('change', [data.city]);
+                    }, 500); // API通信のための適切な遅延
+                }
+            }
+        }
+        
+        $newDay.find('.accommodation').val(data.accommodation || '');
+        $newDay.find('.must-do-eat').val(data.doEat ? data.doEat.join('\n') : '');
+        $newDay.find('.day-specific-notes').val(data.notes ? data.notes.join('\n') : '');
+        
+        const $placesContainer = $newDay.find('.places-container');
+        // URL情報もaddPlace関数に渡すように修正
+        if (data.places && data.places.length > 0) {
+            data.places.forEach(place => addPlace($placesContainer, place));
+        } else {
+            addPlace($placesContainer);
+        }
+
+        $('#days-container').append($newDay);
+    }
+
+    function addPlace($container, placeData = {}) {
+        const placeHtml = placeTemplate({
+            name: placeData.name || '',
+            url: placeData.url || ''
+        });
+        $container.append(placeHtml);
+    }
+
+    $('.add-day-btn').on('click', function(){ addDay(); });
+    $('.toggle-import-btn').on('click', function(){ $('#import-area').slideToggle(); });
+    
+    $('#days-container').on('change', '.prefecture-select', function(event, cityToSelect) {
+        const $prefSelect = $(this);
+        const $citySelect = $prefSelect.siblings('.city-select');
+        const selectedPrefCode = $prefSelect.val();
+        $citySelect.html('<option value="">読み込み中...</option>').prop('disabled', true);
+        if (!selectedPrefCode) {
+            $citySelect.html('<option value="">市町村</option>').prop('disabled', true);
+            return;
+        }
+        $.getJSON(`${API_ENDPOINT}?api=cities&prefCode=${selectedPrefCode}`, function(data) {
+            $citySelect.html('<option value="">市町村を選択</option>').prop('disabled', false);
+            if (data && Array.isArray(data)) {
+                data.forEach(cityName => {
+                    $citySelect.append(`<option value="${cityName}">${cityName}</option>`);
+                });
+                if (cityToSelect) {
+                    $citySelect.val(cityToSelect);
+                }
+            }
+        }).fail(function() {
+            $citySelect.html('<option value="">取得失敗</option>').prop('disabled', true);
+            alert('市町村データの取得に失敗しました。');
+        });
+    });
+    
+    $('#days-container').on('click', '.remove-day-btn', function(){
+         const $dayPlan = $(this).closest('.day-plan');
+         if ($('.day-plan').length > 1) {
+             $dayPlan.remove();
+             $('.day-plan').each(function(index){
+                 $(this).find('h2 span').text(`${index + 1}日目`);
+             });
+             dayCount = $('.day-plan').length;
+         } else {
+             alert('最低でも1日は必要です。');
+         }
+    });
+    $('#days-container').on('click', '.add-place-btn', function(){ addPlace($(this).prev('.places-container')); });
+    $('#days-container').on('click', '.remove-place-btn', function(){
+         const $group = $(this).closest('.dynamic-input-group');
+         if ($group.parent().children().length > 1) {
+             $group.remove();
+         } else {
+             alert('最低でも1つの入力欄は必要です。');
+         }
+    });
+    
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    // ★ ここが今回の修正ポイントです！(パーサーの最終完全版) ★
+    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+    $('.import-button').on('click', function(){
+        const text = $('#import-prompt').val();
+        if (!text.trim()) { alert('プロンプトを貼り付けてください。'); return; }
+
+        try {
+            if(DEBUG_FLAG) { console.clear(); console.log("--- 解析開始 ---"); }
+            
+            const data = { general: {}, days: [] };
+            const tokens = marked.lexer(text);
+            let currentSection = ''; 
+            let currentDay = null;
+            let currentListKey = '';
+
+            function extractText(tokens) {
+                return tokens.map(t => {
+                    if (t.type === 'link') {
+                        // Return a special format to be parsed later
+                        return `__LINK__${t.text}__SEP__${t.href}__ENDLINK__`;
+                    }
+                    return t.tokens ? extractText(t.tokens) : t.text;
+                }).join('');
+            }
+            
+            function parseListItem(item) {
+                if (!item.tokens) return { isKeyValue: false };
+                let key = '', value = '', isKeyValue = false;
+                
+                if (item.tokens[0] && item.tokens[0].tokens) {
+                    const strongToken = item.tokens[0].tokens.find(t => t.type === 'strong');
+                    if (strongToken) {
+                        key = extractText(strongToken.tokens);
+                        const keyIndex = item.tokens[0].tokens.indexOf(strongToken);
+                        const valueTokens = item.tokens[0].tokens.slice(keyIndex + 1);
+                        value = extractText(valueTokens).replace(/^：\s*/, '').trim();
+                        isKeyValue = true;
+                    }
+                }
+                return { isKeyValue, key, value, rawText: extractText(item.tokens) };
+            }
+
+            tokens.forEach((token, tokenIndex) => {
+                if(DEBUG_FLAG) {
+                    console.groupCollapsed(`[Token ${tokenIndex}] type: %c${token.type}`, "font-weight: bold;");
+                    console.log(token);
+                    console.groupEnd();
+                }
+
+                if (token.type === 'heading' && token.depth === 3) {
+                    const title = token.text;
+                    currentListKey = '';
+                    if (title.includes('旅行全体の基本情報')) currentSection = 'general';
+                    else if (title.includes('日目')) {
+                        currentSection = 'day';
+                        currentDay = { places: [], doEat: [], notes: [] };
+                        data.days.push(currentDay);
+                        const dateMatch = title.match(/（(\d{4}\/\d{1,2}\/\d{1,2})・/);
+                        if (dateMatch) {
+                            const [year, month, day] = dateMatch[1].split('/');
+                            currentDay.date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                        }
+                    } else {
+                        currentSection = 'footer';
+                    }
+                }
+
+                if (token.type === 'list' && (currentSection === 'general' || currentSection === 'day')) {
+                    token.items.forEach(item => {
+                        const parsedItem = parseListItem(item);
+                        
+                        if (parsedItem.isKeyValue) {
+                            currentListKey = parsedItem.key;
+                            if (currentSection === 'general') {
+                                if (parsedItem.key.includes('出発地')) data.general.departure = parsedItem.value;
+                                else if (parsedItem.key.includes('メンバー構成')) data.general.members = parsedItem.value;
+                                else if (parsedItem.key.includes('旅のテーマ')) data.general.theme = parsedItem.value;
+                                else if (parsedItem.key.includes('最優先事項')) data.general.priority = parsedItem.value;
+                            } else if (currentDay) {
+                                if (parsedItem.key.includes('主な活動エリア')) {
+                                    const areaParts = parsedItem.value.match(/(.+?)\s*[\(（](.+?)[\)）]/);
+                                    currentDay.area = areaParts ? areaParts[1].trim() : parsedItem.value;
+                                    currentDay.city = areaParts ? areaParts[2].trim() : '';
+                                } else if (parsedItem.key.includes('宿泊先')) {
+                                    currentDay.accommodation = parsedItem.value;
+                                }
+                            }
+                            if(item.tokens.length > 1 && item.tokens[1] && item.tokens[1].type === 'list') {
+                                item.tokens[1].items.forEach(subItem => {
+                                    const subItemText = extractText(subItem.tokens).trim();
+                                    if (currentDay && currentListKey) {
+                                        if (currentListKey.includes('行きたい場所')) {
+                                            const linkMatch = subItemText.match(/__LINK__(.+)__SEP__(.+)__ENDLINK__/);
+                                            if (linkMatch) {
+                                                currentDay.places.push({ name: linkMatch[1], url: linkMatch[2] });
+                                            } else {
+                                                currentDay.places.push({ name: subItemText });
+                                            }
+                                        } else if (currentListKey.includes('やりたいこと')) {
+                                            currentDay.doEat.push(subItemText);
+                                        } else if (currentListKey.includes('交通パス')) {
+                                            currentDay.notes.push(subItemText);
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+            
+            if(DEBUG_FLAG) { console.log("%c\n--- 最終解析結果 ---", "color: blue; font-size: 16px;"); console.log(JSON.stringify(data, null, 2)); }
+            
+            $('#departure-point').val(data.general.departure || '');
+            $('#members').val(data.general.members || '');
+            $('#theme').val(data.general.theme || '');
+            $('#priority').val(data.general.priority || '');
+            $('#days-container').empty(); dayCount = 0;
+            if(data.days.length > 0) {
+                data.days.forEach(dayData => addDay(dayData));
+            } else { addDay(); }
+            alert('フォームにプロンプトの内容を反映しました！');
+        } catch (e) {
+            alert('プロンプトの解析中にエラーが発生しました。詳細はコンソールを確認してください。');
+            console.error("解析エラー:", e);
+        }
+    });
+
+    $('.generate-btn').on('click', function(){
+        const templateData = { general: {}, days: [], proactiveSuggestions: $('#proactive-suggestions').is(':checked') };
+        templateData.general.departure = $('#departure-point').val();
+        templateData.general.members = $('#members').val();
+        templateData.general.theme = $('#theme').val();
+        templateData.general.priority = $('#priority').val();
+        $('.day-plan').each(function(index){
+            const $dayDiv = $(this); const dateVal = $dayDiv.find('.travel-date').val();
+            let date = null; if(dateVal) { date = new Date(dateVal + 'T00:00:00'); }
+            const prefCode = $dayDiv.find('.prefecture-select').val();
+            const prefName = prefectures[prefCode] || '';
+            const cityName = $dayDiv.find('.city-select').val();
+            let areaText = prefName;
+            if (cityName) { areaText += ` (${cityName})`; }
+            const dayData = {
+                dayNumber: index + 1,
+                date: date ? `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}` : '',
+                dayOfWeek: date ? ['日', '月', '火', '水', '木', '金', '土'][date.getDay()] : '',
+                area: areaText,
+                accommodation: $dayDiv.find('.accommodation').val(),
+                places: [],
+                doEat: $dayDiv.find('.must-do-eat').val().trim().split('\n').filter(Boolean),
+                notes: $dayDiv.find('.day-specific-notes').val().trim().split('\n').filter(Boolean)
+            };
+            $dayDiv.find('.places-container .dynamic-input-group').each(function(){
+                const name = $(this).find('.place-name').val().trim();
+                const url = $(this).find('.place-url').val().trim();
+                if (name) dayData.places.push({ name: name, url: url });
+            });
+            templateData.days.push(dayData);
+        });
+        const markdown = markdownTemplate(templateData);
+        const $outputTextarea = $('#output-markdown');
+        $outputTextarea.val(markdown);
+        $('#output-area').slideDown();
+        $outputTextarea.css('height', 'auto').css('height', $outputTextarea.prop('scrollHeight') + 'px');
+    });
+    
+    $('.copy-button').on('click', function(){
+         const textarea = document.getElementById('output-markdown');
+         textarea.select();
+         document.execCommand('copy');
+         alert('プロンプトをクリップボードにコピーしました！');
+    });
+
+    fetchPrefectures().done(function() {
+        addDay(); 
+    });
+});

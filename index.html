@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>旅行プラン・プロンプトジェネレーター (marked.js版)</title>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
+    <!-- ★★★★★★★ marked.jsライブラリの読み込み ★★★★★★★ -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans p-5">
+    <!-- (bodyタグの中身は、前回のバージョンから変更ありません) -->
+    <div class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg">
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold text-blue-600 mb-1">旅行プラン・プロンプトジェネレーター</h1>
+            <p class="text-sm text-gray-500 italic" id="version-info"></p>
+        </div>
+
+        <button type="button" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg mb-6 transition-colors toggle-import-btn">以前のプロンプトを読み込む</button>
+        <fieldset id="import-area" class="border border-gray-300 rounded-md p-6 mb-6" style="display:none;">
+            <legend class="text-lg font-bold text-blue-600 px-2">プロンプトから入力フォームに反映</legend>
+            <label for="import-prompt" class="block mb-2 font-semibold">ここに以前生成したプロンプトを貼り付けてください</label>
+            <textarea id="import-prompt" class="w-full p-2 border border-gray-300 rounded-md min-h-[150px] bg-gray-50 mb-4" placeholder="「# 旅行プランの作成依頼」から始まるテキストを貼り付けます..."></textarea>
+            <button type="button" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors import-button">フォームに反映する</button>
+        </fieldset>
+
+        <form id="prompt-form">
+            <fieldset class="border border-gray-300 rounded-md p-6 mb-6">
+                <legend class="text-lg font-bold text-blue-600 px-2">旅行全体の基本情報</legend>
+                <label for="departure-point" class="block mb-2 font-semibold">出発地</label>
+                <input type="text" id="departure-point" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：札幌、自宅" value="札幌">
+                <label for="members" class="block mb-2 font-semibold">メンバー構成・体力レベル</label>
+                <input type="text" id="members" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：30代夫婦、体力に自信あり">
+                <label for="theme" class="block mb-2 font-semibold">旅のテーマ・雰囲気</label>
+                <input type="text" id="theme" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：レトロな街並みを楽しむ">
+                <label for="priority" class="block mb-2 font-semibold">最優先事項</label>
+                <input type="text" id="priority" class="w-full p-2 border border-gray-300 rounded-md" placeholder="例：『〇〇展をじっくり見ること』が最優先">
+            </fieldset>
+
+            <div id="days-container">
+                <!-- 日ごとのプラン入力欄がJavaScriptによってここに追加されます -->
+            </div>
+
+            <div class="text-center my-8">
+                <button type="button" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-6 rounded-lg transition-colors add-day-btn">旅行日数を追加する</button>
+            </div>
+            
+            <fieldset class="border border-gray-300 rounded-md p-6 mb-6">
+                <legend class="text-lg font-bold text-blue-600 px-2">AIへの特別指示</legend>
+                 <label class="flex items-center font-normal cursor-pointer">
+                    <input type="checkbox" id="proactive-suggestions" class="mr-3 h-4 w-4" checked>
+                    AIからの魅力的な追加提案（+α）を希望する
+                </label>
+            </fieldset>
+            
+            <div class="text-center my-8">
+                <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors generate-btn">Markdownを生成する</button>
+            </div>
+        </form>
+        
+        <div id="output-area" style="display:none;">
+            <h2 class="text-2xl font-bold text-blue-600 text-center mt-0 pb-2 border-b-2 border-blue-600">生成されたプロンプト</h2>
+            <textarea id="output-markdown" class="w-full p-2 border border-gray-300 rounded-md min-h-[300px] bg-gray-50 mt-6" readonly></textarea>
+            <button type="button" class="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors copy-button">クリップボードにコピー</button>
+        </div>
+    </div>
+
+    <!-- Handlebars Templates -->
+    <script id="day-plan-template" type="text/x-handlebars-template">
+        <div class="border-2 border-dashed border-blue-500 p-6 mb-6 rounded-lg day-plan" data-day="{{dayNumber}}">
+            <h2 class="text-2xl font-bold text-blue-600 text-center mt-0 pb-2 mb-6 flex justify-between items-center">
+                <span>{{dayNumber}}日目</span>
+                <button type="button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 text-xs rounded-full remove-day-btn">この日を削除</button>
+            </h2>
+            <label class="block mb-2 font-semibold">日付</label>
+            <input type="date" class="travel-date w-full p-2 border border-gray-300 rounded-md mb-4">
+            <label class="block mb-2 font-semibold">主な活動エリア</label>
+            <div class="flex gap-4 mb-4">
+                <select class="prefecture-select w-1/2 p-2 border border-gray-300 rounded-md">
+                    <option value="">都道府県を選択</option>
+                    {{#each prefectures}}
+                        <option value="{{this.code}}">{{this.name}}</option>
+                    {{/each}}
+                </select>
+                <select class="city-select w-1/2 p-2 border border-gray-300 rounded-md" disabled><option value="">市町村</option></select>
+            </div>
+            <label class="block mb-2 font-semibold">宿泊先／最終目的地</label>
+            <input type="text" class="accommodation w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：ホテル、空港など">
+            <label class="block mb-2 font-semibold">この日に行きたい場所</label>
+            <div class="dynamic-input-container places-container"></div>
+            <button type="button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 text-sm rounded-lg -mt-2 add-item-btn add-place-btn">場所を追加</button>
+            <label class="block mt-4 mb-2 font-semibold">やりたいこと・食べたいもの</label>
+            <textarea class="must-do-eat w-full p-2 border border-gray-300 rounded-md min-h-[80px]"></textarea>
+            <label class="block mt-4 mb-2 font-semibold">交通パス・時間指定など</label>
+            <textarea class="day-specific-notes w-full p-2 border border-gray-300 rounded-md min-h-[80px]"></textarea>
+        </div>
+    </script>
+    <script id="place-input-template" type="text/x-handlebars-template">
+        <div class="flex gap-2 items-center mb-3 dynamic-input-group">
+            <input type="text" class="place-name w-full p-2 border border-gray-300 rounded-md grow" placeholder="場所の名前" value="{{name}}">
+            <input type="text" class="place-url w-full p-2 border border-gray-300 rounded-md grow" placeholder="URL (任意)" value="{{url}}">
+            <button type="button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-3 text-sm rounded-lg shrink-0 remove-place-btn">削除</button>
+        </div>
+    </script>
+    <!-- ★★★ Markdown生成用のテンプレート（新仕様） ★★★ -->
+    <script id="markdown-template" type="text/x-handlebars-template">
+# 旅行プランの作成依頼
+
+あなたは非常に優秀で、柔軟な思考ができる旅行プランナーです。以下の条件と希望をすべて満たす、最高の旅行プランを提案してください。
+
+### 旅行全体の基本情報
+*   **出発地**：{{general.departure}}
+*   **メンバー構成・体力レベル**：{{general.members}}
+*   **旅のテーマ・雰囲気**：{{general.theme}}
+*   **最優先事項**：{{general.priority}}
+
+{{#each days}}
+### {{dayNumber}}日目（{{date}}・{{dayOfWeek}}）
+*   **主な活動エリア**：{{area}}
+*   **宿泊先／最終目的地**：{{accommodation}}
+*   **行きたい場所**：
+{{#each places}}
+    *   {{#if url}}[{{name}}]({{url}}){{else}}{{name}}{{/if}}
+{{/each}}
+*   **やりたいこと・食べたいもの**：
+{{#each doEat}}
+    *   {{this}}
+{{/each}}
+*   **交通パス・時間指定など**：
+{{#each notes}}
+    *   {{this}}
+{{/each}}
+
+{{/each}}
+### AIへの特別指示（最重要）
+*   **【複数の選択肢の提案について】**
+    私が指定する時間は、あくまで**「目標」**です。もし、より最適になる代替プランが考えられる場合は、**『プランA』『プランB』『プランC』…という形式で、考えられる限りの魅力的な選択肢を提案してください。提案の数に制限はありません。素晴らしいアイデアがあれば、3つでも4つでも歓迎します。**
+
+*   **【交通機関の正確性について】**
+    バス、フェリー、ロープウェイなど、地方の交通機関の時刻は、最新・正確ではない可能性があることを前提にしてください。そのため、プランの中には必ず**『【要・公式サイト等で時刻確認】』**といった注意書きを入れ、私が後で自分で確認できるようにしてください。
+{{#if proactiveSuggestions}}
+
+### +α（プラスアルファ）の魅力的な提案について
+あなたは単なる指示実行者ではなく、魅力的な旅を創造するパートナーです。私が依頼した必須条件を満した上で、さらに旅を豊かにするような、あなたからの自発的な提案を歓迎します。
+
+提案は、私の興味や旅のテーマに合致し、かつ旅程の経路上や近隣にある隠れた名店、絶景スポット、面白いイベントなど、私が気づいていないような魅力的な選択肢にしてください。
+
+提案は、メインのプランとは別に**『プランナーからの+α提案』**というセクションを設けて記載し、**素晴らしいアイデアがあれば複数提案することを歓迎します。**その際、それぞれの提案について、**『何を』『なぜおすすめなのか』『それを実行する場合、スケジュールのどこをどう調整する必要があるか』**を具体的に明記してください。
+{{/if}}
+    </script>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
