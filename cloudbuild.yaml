@@ -1,0 +1,43 @@
+steps:
+# -----------------------------------------------
+# Step 1: バックエンド (Cloud Run) のデプロイ
+# -----------------------------------------------
+- name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+  entrypoint: 'gcloud'
+  args:
+    - 'run'
+    - 'deploy'
+    - 'geo-api-proxy' # あなたのCloud Runサービス名
+    - '--source'
+    - './backend' # バックエンドのコードがあるフォルダ
+    - '--region'
+    - 'asia-northeast1'
+    - '--platform'
+    - 'managed'
+    - '--allow-unauthenticated'
+    - '--set-env-vars'
+    - 'KENALL_API_KEY=${_KENALL_API_KEY}' # ★機密情報は、ここから安全に渡します
+
+# -----------------------------------------------
+# Step 2: フロントエンド (GCS) のデプロイ
+# -----------------------------------------------
+- name: 'gcr.io/cloud-builders/gsutil'
+  args:
+    - '-m'
+    - 'rsync'
+    - '-r'
+    - './frontend' # フロントエンドのコードがあるフォルダ
+    - 'gs://migarashi_travel_plan' # あなたのGCSバケット名
+
+# -----------------------------------------------
+# Step 3 (将来の拡張): シナリオテストの実行
+# -----------------------------------------------
+# - name: 'node'
+#   entrypoint: 'npm'
+#   args: ['install']
+# - name: 'node'
+#   entrypoint: 'npm'
+#   args: ['test'] # package.jsonにテストコマンドを定義しておく
+
+substitutions:
+  _KENALL_API_KEY: '104037eb2b51c7082e065838ebc766e1507b6482' # ★ここにAPIキーを設定（後述）
