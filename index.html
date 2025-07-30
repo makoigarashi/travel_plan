@@ -11,6 +11,11 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-5">
+    <!-- ★★★ テスト実行ボタンをここに追加 ★★★ -->
+    <div class="text-center my-4 border-t pt-4">
+        <button type="button" id="run-tests-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">シナリオテストを実行</button>
+    </div>
+
     <!-- (bodyタグの中身は、前回のバージョンから変更ありません) -->
     <div class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg">
         <div class="text-center mb-8">
@@ -30,7 +35,7 @@
             <fieldset class="border border-gray-300 rounded-md p-6 mb-6">
                 <legend class="text-lg font-bold text-blue-600 px-2">旅行全体の基本情報</legend>
                 <label for="departure-point" class="block mb-2 font-semibold">出発地</label>
-                <input type="text" id="departure-point" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：札幌、自宅" value="札幌">
+                <input type="text" id="departure-point" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：札幌、自宅">
                 <label for="members" class="block mb-2 font-semibold">メンバー構成・体力レベル</label>
                 <input type="text" id="members" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：30代夫婦、体力に自信あり">
                 <label for="theme" class="block mb-2 font-semibold">旅のテーマ・雰囲気</label>
@@ -151,7 +156,9 @@
 {{/if}}
     </script>
 
+    <script src="config.js"></script>
     <script src="script.js"></script>
-
+    <script src="test_scenarios.js"></script>
+    <script src="test_runner.js"></script>
 </body>
 </html>

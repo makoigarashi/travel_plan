@@ -1,21 +1,131 @@
+const DEBUG_FLAG = AppConfig.DEBUG_FLAG;
+
+function parseMarkdownFromText(text) {
+    const data = { general: {}, days: [] };
+    const tokens = marked.lexer(text);
+    let currentSection = ''; 
+    let currentDay = null;
+    let currentListKey = '';
+
+    function extractText(tokens) {
+        return tokens.map(t => {
+            if (t.type === 'link') {
+                // Return a special format to be parsed later
+                return `__LINK__${t.text}__SEP__${t.href}__ENDLINK__`;
+            }
+            return t.tokens ? extractText(t.tokens) : t.text;
+        }).join('');
+    }
+    
+    function parseListItem(item) {
+        if (!item.tokens) return { isKeyValue: false };
+        let key = '', value = '', isKeyValue = false;
+        
+        if (item.tokens[0] && item.tokens[0].tokens) {
+            const strongToken = item.tokens[0].tokens.find(t => t.type === 'strong');
+            if (strongToken) {
+                key = extractText(strongToken.tokens);
+                const keyIndex = item.tokens[0].tokens.indexOf(strongToken);
+                const valueTokens = item.tokens[0].tokens.slice(keyIndex + 1);
+                value = extractText(valueTokens).replace(/^：\s*/, '').trim();
+                isKeyValue = true;
+            }
+        }
+        return { isKeyValue, key, value, rawText: extractText(item.tokens) };
+    }
+
+    tokens.forEach((token, tokenIndex) => {
+        if(DEBUG_FLAG) {
+            console.groupCollapsed(`[Token ${tokenIndex}] type: %c${token.type}`, "font-weight: bold;");
+            console.log(token);
+            console.groupEnd();
+        }
+
+        if (token.type === 'heading' && token.depth === 3) {
+            const title = token.text;
+            currentListKey = '';
+            if (title.includes('旅行全体の基本情報')) currentSection = 'general';
+            else if (title.includes('日目')) {
+                currentSection = 'day';
+                currentDay = { places: [], doEat: [], notes: [] };
+                data.days.push(currentDay);
+                const dateMatch = title.match(/（(\d{4}\/\d{1,2}\/\d{1,2})・/);
+                if (dateMatch) {
+                    const [year, month, day] = dateMatch[1].split('/');
+                    currentDay.date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+                }
+            } else {
+                currentSection = 'footer';
+            }
+        }
+
+        if (token.type === 'list' && (currentSection === 'general' || currentSection === 'day')) {
+            token.items.forEach(item => {
+                const parsedItem = parseListItem(item);
+                
+                if (parsedItem.isKeyValue) {
+                    currentListKey = parsedItem.key;
+                    if (currentSection === 'general') {
+                        if (parsedItem.key.includes('出発地')) data.general.departure = parsedItem.value;
+                        else if (parsedItem.key.includes('メンバー構成')) data.general.members = parsedItem.value;
+                        else if (parsedItem.key.includes('旅のテーマ')) data.general.theme = parsedItem.value;
+                        else if (parsedItem.key.includes('最優先事項')) data.general.priority = parsedItem.value;
+                    } else if (currentDay) {
+                        if (parsedItem.key.includes('主な活動エリア')) {
+                            const areaParts = parsedItem.value.match(/(.+?)\s*[\(（](.+?)[\)）]/);
+                            currentDay.area = areaParts ? areaParts[1].trim() : parsedItem.value;
+                            currentDay.city = areaParts ? areaParts[2].trim() : '';
+                        } else if (parsedItem.key.includes('宿泊先')) {
+                            currentDay.accommodation = parsedItem.value;
+                        }
+                    }
+                    if(item.tokens.length > 1 && item.tokens[1] && item.tokens[1].type === 'list') {
+                        item.tokens[1].items.forEach(subItem => {
+                            const subItemText = extractText(subItem.tokens).trim();
+                            if (currentDay && currentListKey) {
+                                if (currentListKey.includes('行きたい場所')) {
+                                    const linkMatch = subItemText.match(/__LINK__(.+)__SEP__(.+)__ENDLINK__/);
+                                    if (linkMatch) {
+                                        currentDay.places.push({ name: linkMatch[1], url: linkMatch[2] });
+                                    } else {
+                                        currentDay.places.push({ name: subItemText });
+                                    }
+                                } else if (currentListKey.includes('やりたいこと')) {
+                                    currentDay.doEat.push(subItemText);
+                                } else if (currentListKey.includes('交通パス')) {
+                                    currentDay.notes.push(subItemText);
+                                }
+                            }
+                        });
+                    }
+                }
+            });
+        }
+    });
+    
+    return data;
+}
+
+
 $(document).ready(function(){
-    const DEBUG_FLAG = true;
     let dayCount = 0;
     let prefectures = {}; 
 
-    const API_ENDPOINT = 'https://geo-api-proxy-160651572780.asia-northeast1.run.app'; // ★★★ あなたのCloud RunのURLをここに設定 ★★★
+    const API_ENDPOINT = AppConfig.API_ENDPOINT;
 
     const dayTemplate = Handlebars.compile($('#day-plan-template').html());
     const placeTemplate = Handlebars.compile($('#place-input-template').html());
     const markdownTemplate = Handlebars.compile($('#markdown-template').html());
 
-    const prefixes = [
-        '花の', '煌びやかな', '伝説の', '究極の', '月影の', '星屑の',
-        '暁の', '至高の', '神速の', '冒険の', '真・', '最終奥義', '風の'
-    ];
-    const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const randomPrefix = AppConfig.prefixes[Math.floor(Math.random() * AppConfig.prefixes.length)];
     $('#version-info').text(`${randomPrefix}出発地設定・複数日対応版 (Ver. FINAL-STABLE)`);
     
+    // ★★★ デフォルト値を config.js から設定 ★★★
+    $('#departure-point').val(AppConfig.defaultValues.departure);
+    $('#members').val(AppConfig.defaultValues.members);
+    $('#theme').attr('placeholder',AppConfig.defaultValues.theme);
+    $('#priority').attr('placeholder',AppConfig.defaultValues.priority);
+
     function fetchPrefectures() {
         return $.getJSON(`${API_ENDPOINT}?api=prefectures`).done(function(data){
             prefectures = data;
@@ -70,6 +180,8 @@ $(document).ready(function(){
         });
         $container.append(placeHtml);
     }
+
+        
 
     $('.add-day-btn').on('click', function(){ addDay(); });
     $('.toggle-import-btn').on('click', function(){ $('#import-area').slideToggle(); });
@@ -126,112 +238,12 @@ $(document).ready(function(){
     // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
     $('.import-button').on('click', function(){
         const text = $('#import-prompt').val();
-        if (!text.trim()) { alert('プロンプトを貼り付けてください。'); return; }
 
         try {
+            const data = parseMarkdownFromText(text); // ★ 切り出した関数を呼び出す
+            if (!text.trim()) { alert('プロンプトを貼り付けてください。'); return; }
+
             if(DEBUG_FLAG) { console.clear(); console.log("--- 解析開始 ---"); }
-            
-            const data = { general: {}, days: [] };
-            const tokens = marked.lexer(text);
-            let currentSection = ''; 
-            let currentDay = null;
-            let currentListKey = '';
-
-            function extractText(tokens) {
-                return tokens.map(t => {
-                    if (t.type === 'link') {
-                        // Return a special format to be parsed later
-                        return `__LINK__${t.text}__SEP__${t.href}__ENDLINK__`;
-                    }
-                    return t.tokens ? extractText(t.tokens) : t.text;
-                }).join('');
-            }
-            
-            function parseListItem(item) {
-                if (!item.tokens) return { isKeyValue: false };
-                let key = '', value = '', isKeyValue = false;
-                
-                if (item.tokens[0] && item.tokens[0].tokens) {
-                    const strongToken = item.tokens[0].tokens.find(t => t.type === 'strong');
-                    if (strongToken) {
-                        key = extractText(strongToken.tokens);
-                        const keyIndex = item.tokens[0].tokens.indexOf(strongToken);
-                        const valueTokens = item.tokens[0].tokens.slice(keyIndex + 1);
-                        value = extractText(valueTokens).replace(/^：\s*/, '').trim();
-                        isKeyValue = true;
-                    }
-                }
-                return { isKeyValue, key, value, rawText: extractText(item.tokens) };
-            }
-
-            tokens.forEach((token, tokenIndex) => {
-                if(DEBUG_FLAG) {
-                    console.groupCollapsed(`[Token ${tokenIndex}] type: %c${token.type}`, "font-weight: bold;");
-                    console.log(token);
-                    console.groupEnd();
-                }
-
-                if (token.type === 'heading' && token.depth === 3) {
-                    const title = token.text;
-                    currentListKey = '';
-                    if (title.includes('旅行全体の基本情報')) currentSection = 'general';
-                    else if (title.includes('日目')) {
-                        currentSection = 'day';
-                        currentDay = { places: [], doEat: [], notes: [] };
-                        data.days.push(currentDay);
-                        const dateMatch = title.match(/（(\d{4}\/\d{1,2}\/\d{1,2})・/);
-                        if (dateMatch) {
-                            const [year, month, day] = dateMatch[1].split('/');
-                            currentDay.date = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-                        }
-                    } else {
-                        currentSection = 'footer';
-                    }
-                }
-
-                if (token.type === 'list' && (currentSection === 'general' || currentSection === 'day')) {
-                    token.items.forEach(item => {
-                        const parsedItem = parseListItem(item);
-                        
-                        if (parsedItem.isKeyValue) {
-                            currentListKey = parsedItem.key;
-                            if (currentSection === 'general') {
-                                if (parsedItem.key.includes('出発地')) data.general.departure = parsedItem.value;
-                                else if (parsedItem.key.includes('メンバー構成')) data.general.members = parsedItem.value;
-                                else if (parsedItem.key.includes('旅のテーマ')) data.general.theme = parsedItem.value;
-                                else if (parsedItem.key.includes('最優先事項')) data.general.priority = parsedItem.value;
-                            } else if (currentDay) {
-                                if (parsedItem.key.includes('主な活動エリア')) {
-                                    const areaParts = parsedItem.value.match(/(.+?)\s*[\(（](.+?)[\)）]/);
-                                    currentDay.area = areaParts ? areaParts[1].trim() : parsedItem.value;
-                                    currentDay.city = areaParts ? areaParts[2].trim() : '';
-                                } else if (parsedItem.key.includes('宿泊先')) {
-                                    currentDay.accommodation = parsedItem.value;
-                                }
-                            }
-                            if(item.tokens.length > 1 && item.tokens[1] && item.tokens[1].type === 'list') {
-                                item.tokens[1].items.forEach(subItem => {
-                                    const subItemText = extractText(subItem.tokens).trim();
-                                    if (currentDay && currentListKey) {
-                                        if (currentListKey.includes('行きたい場所')) {
-                                            const linkMatch = subItemText.match(/__LINK__(.+)__SEP__(.+)__ENDLINK__/);
-                                            if (linkMatch) {
-                                                currentDay.places.push({ name: linkMatch[1], url: linkMatch[2] });
-                                            } else {
-                                                currentDay.places.push({ name: subItemText });
-                                            }
-                                        } else if (currentListKey.includes('やりたいこと')) {
-                                            currentDay.doEat.push(subItemText);
-                                        } else if (currentListKey.includes('交通パス')) {
-                                            currentDay.notes.push(subItemText);
-                                        }
-                                    }
-                                });
-                            }
-                        }
-                    });
-                }
-            });
             
             if(DEBUG_FLAG) { console.log("%c\n--- 最終解析結果 ---", "color: blue; font-size: 16px;"); console.log(JSON.stringify(data, null, 2)); }
             
