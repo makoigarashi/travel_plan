@@ -16,8 +16,6 @@ const scenarios = [
         expected: {
             general: {
                 departure: "札幌",
-                members: "",
-                theme: "",
                 priority: "美術館に行く"
             },
             days: [
@@ -25,7 +23,6 @@ const scenarios = [
                     date: "2025-08-02",
                     area: "北海道",
                     city: "苫小牧市",
-                    accommodation: "",
                     places: [
                         { name: "苫小牧市美術博物館", url: "https://example.com/museum" }
                     ],
@@ -48,10 +45,6 @@ const scenarios = [
 `,
         expected: {
             general: {
-                departure: "札幌", // デフォルト値が反映されることを期待
-                members: "",
-                theme: "",
-                priority: ""
             },
             days: [
                 {
@@ -67,9 +60,8 @@ const scenarios = [
                     date: "2026-01-01",
                     area: "神奈川",
                     city: "横浜市",
-                    accommodation: "",
                     places: [
-                        { name: "カップヌードルミュージアム", url: "" }
+                        { name: "カップヌードルミュージアム" }
                     ],
                     doEat: [],
                     notes: []

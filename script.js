@@ -1,4 +1,4 @@
-const DEBUG_FLAG = true;
+const DEBUG_FLAG = AppConfig.DEBUG_FLAG;
 
 function parseMarkdownFromText(text) {
     const data = { general: {}, days: [] };
@@ -111,19 +111,21 @@ $(document).ready(function(){
     let dayCount = 0;
     let prefectures = {}; 
 
-    const API_ENDPOINT = 'https://geo-api-proxy-160651572780.asia-northeast1.run.app'; // ★★★ あなたのCloud RunのURLをここに設定 ★★★
+    const API_ENDPOINT = AppConfig.API_ENDPOINT;
 
     const dayTemplate = Handlebars.compile($('#day-plan-template').html());
     const placeTemplate = Handlebars.compile($('#place-input-template').html());
     const markdownTemplate = Handlebars.compile($('#markdown-template').html());
 
-    const prefixes = [
-        '花の', '煌びやかな', '伝説の', '究極の', '月影の', '星屑の',
-        '暁の', '至高の', '神速の', '冒険の', '真・', '最終奥義', '風の'
-    ];
-    const randomPrefix = prefixes[Math.floor(Math.random() * prefixes.length)];
+    const randomPrefix = AppConfig.prefixes[Math.floor(Math.random() * AppConfig.prefixes.length)];
     $('#version-info').text(`${randomPrefix}出発地設定・複数日対応版 (Ver. FINAL-STABLE)`);
     
+    // ★★★ デフォルト値を config.js から設定 ★★★
+    $('#departure-point').val(AppConfig.defaultValues.departure);
+    $('#members').val(AppConfig.defaultValues.members);
+    $('#theme').attr('placeholder',AppConfig.defaultValues.theme);
+    $('#priority').attr('placeholder',AppConfig.defaultValues.priority);
+
     function fetchPrefectures() {
         return $.getJSON(`${API_ENDPOINT}?api=prefectures`).done(function(data){
             prefectures = data;

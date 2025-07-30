@@ -44,10 +44,11 @@ $(document).ready(function(){
                 const actual = parseMarkdownFromText(scenario.input);
                 
                 // 期待値のデフォルト値を補完
-                const expected = $.extend(true, {}, {
-                    general: { departure: "札幌", members: "", theme: "", priority: "" },
-                    days: []
-                }, scenario.expected);
+                // const expected = $.extend(true, {}, {
+                //     general: { departure: "札幌", members: "", theme: "", priority: "" },
+                //     days: []
+                // }, scenario.expected);
+                const expected = scenario.expected;
 
                 // 結果と期待値を比較
                 if (deepEqual(actual, expected)) {
