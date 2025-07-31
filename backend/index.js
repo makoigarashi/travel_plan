@@ -44,11 +44,10 @@ app.get('/', async (req, res) => {
       if (!prefCode) {
         return res.status(400).send('Prefecture code is required.');
       }
-
+      
       const query = `
         query {
-          municipalities(prefectureCode: ${parseInt(prefCode, 10)}) {
-            code
+          municipalities(prefCodes: [${parseInt(prefCode, 10)}]) {
             name
           }
         }
@@ -70,6 +69,10 @@ app.get('/', async (req, res) => {
         const cities = response.data.data.municipalities.map(item => item.name);
         return res.status(200).json(cities);
       } else {
+         // もし data.errors があれば、それをログに出力
+         if(response.data && response.data.errors) {
+            console.error('GraphQL Errors:', response.data.errors);
+         }
          throw new Error('Unexpected data format from MLIT API');
       }
 
