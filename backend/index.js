@@ -1,6 +1,7 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
+const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -21,6 +22,11 @@ const prefectures = {
 };
 
 app.use(cors());
+
+// SSL/TLSのセキュリティレベルを緩和するためのエージェントを作成
+const httpsAgent = new https.Agent({
+  secureOptions: require('constants').SSL_OP_LEGACY_SERVER_CONNECT,
+});
 
 app.get('/', async (req, res) => {
   if (!MLIT_API_KEY) {
