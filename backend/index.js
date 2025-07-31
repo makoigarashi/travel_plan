@@ -39,7 +39,7 @@ app.get('/', async (req, res) => {
         return res.status(400).send('Prefecture code is required.');
       }
       
-      const response = await axios.get(`https://www.mlit.go.jp/api/v1/municipalities?prefectureCode=${prefCode}`, {
+      const response = await axios.get(`https://www.mlit.go.jp/plateau/api/v1/municipalities?prefectureCode=${prefCode}`, {
         // リクエストヘッダーに、APIキーを追加します！ 
         headers: { 
           'apikey': MLIT_API_KEY
