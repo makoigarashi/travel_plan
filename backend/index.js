@@ -45,19 +45,24 @@ app.get('/', async (req, res) => {
         return res.status(400).send('Prefecture code is required.');
       }
       
-      const response = await axios.get(`https://www.mlit.go.jp/plateau/api/v1/municipalities?prefectureCode=${prefCode}`, {
-        // リクエストヘッダーに、APIキーを追加します！ 
-        headers: { 
-          'apikey': MLIT_API_KEY
-        }
-      });
+      try {
+        const response = await axios.get(apiUrl, {
+            headers: { 'apikey': MLIT_API_KEY },
+            httpsAgent: httpsAgent
+        });
+        
+        // 生データをそのままクライアントに返す
+        console.log("Successfully fetched data:", response.data);
+        return res.status(200).json(response.data);
 
-      if (response.data && response.data.data && response.data.data.municipalities && Array.isArray(response.data.data.municipalities)) {
-        // response.data.data.municipalities の中から "name" を抽出
-        const cities = response.data.data.municipalities.map(item => item.name);
-        return res.status(200).json(cities);
-      } else {
-         throw new Error('Unexpected data format from MLIT API');
+      } catch (error) {
+        if (error.response) {
+          console.error(`Error with API (${error.config.url}):`, error.response.status, error.response.data);
+          res.status(error.response.status).send(error.response.data);
+        } else {
+          console.error('Error with API:', error.message);
+          res.status(500).send('Failed to fetch data from the external API.');
+        }
       }
 
     } else {
