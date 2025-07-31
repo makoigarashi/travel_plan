@@ -44,6 +44,8 @@ app.get('/', async (req, res) => {
       if (!prefCode) {
         return res.status(400).send('Prefecture code is required.');
       }
+
+      const apiUrl = `https://www.mlit.go.jp/plateau/api/v1/municipalities?prefectureCode=${prefCode}`;
       
       try {
         const response = await axios.get(apiUrl, {
