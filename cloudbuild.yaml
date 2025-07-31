@@ -43,4 +43,4 @@ options:
 #   args: ['test'] # package.jsonにテストコマンドを定義しておく
 
 substitutions:
-  MLIT_API_KEY: 'DCFKdtWrE6tTRaZwSI0HACChBmD3PxJP' # ★ここにAPIキーを設定（後述）
+  _MLIT_API_KEY: 'DCFKdtWrE6tTRaZwSI0HACChBmD3PxJP' # ★ここにAPIキーを設定（後述）
