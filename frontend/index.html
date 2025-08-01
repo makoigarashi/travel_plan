@@ -31,6 +31,36 @@
             <button type="button" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors import-button">フォームに反映する</button>
         </fieldset>
 
+        <fieldset class="border border-gray-300 rounded-md p-6 mb-6">
+            <legend class="text-lg font-bold text-blue-600 px-2">プランニング・モード</legend>
+            <label class="flex items-center font-normal cursor-pointer">
+                <input type="checkbox" id="ai-suggestion-mode" class="mr-3 h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
+                AIに行先から提案してもらう
+            </label>
+            <div id="ai-suggestion-inputs" class="mt-4 border-t pt-4" style="display:none;">
+                <label for="arrival-point" class="block mb-2 font-semibold">到着空港・駅</label>
+                <input type="text" id="arrival-point" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：羽田空港, 新千歳空港, 東京駅">
+                <label class="block mb-2 font-semibold">旅行期間</label>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label for="trip-start-date" class="text-sm font-normal">開始日</label>
+                        <input type="date" id="trip-start-date" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                    <div>
+                        <label for="trip-end-date" class="text-sm font-normal">終了日</label>
+                        <input type="date" id="trip-end-date" class="w-full p-2 border border-gray-300 rounded-md">
+                    </div>
+                </div>
+
+                <label for="trip-keywords" class="block mb-2 font-semibold">旅のキーワード (カンマ区切り)</label>
+                <input type="text" id="trip-keywords" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：アート, 自然, 美味しいもの, レトロ">
+
+                <label for="trip-remarks" class="block mb-2 font-semibold">備考・その他の要望</label>
+                <textarea id="trip-remarks" class="w-full p-2 border border-gray-300 rounded-md min-h-[100px]" placeholder="例：往路：新千歳 9:00発 - 羽田 10:35着
+復路：羽田 18:00発 - 新千歳 19:35着
+あまり歩き回りたくないです。"></textarea>            </div>
+        </fieldset>
+
         <form id="prompt-form">
             <fieldset class="border border-gray-300 rounded-md p-6 mb-6">
                 <legend class="text-lg font-bold text-blue-600 px-2">旅行全体の基本情報</legend>
