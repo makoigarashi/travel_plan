@@ -1,13 +1,15 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const https = require('https');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
 const MLIT_API_KEY = process.env.MLIT_API_KEY;
 
+// -----------------------------------------------
+// データ定義
+// -----------------------------------------------
 const prefectures = {
     "01": "北海道", "02": "青森県", "03": "岩手県", "04": "宮城県", "05": "秋田県", 
     "06": "山形県", "07": "福島県", "08": "茨城県", "09": "栃木県", "10": "群馬県", 
@@ -21,13 +23,63 @@ const prefectures = {
     "46": "鹿児島県", "47": "沖縄県"
 };
 
+// CORSミドルウェア
 app.use(cors());
 
-// SSL/TLSのセキュリティレベルを緩和するためのエージェントを作成
-const httpsAgent = new https.Agent({
-  secureOptions: require('constants').SSL_OP_LEGACY_SERVER_CONNECT,
-});
+// -----------------------------------------------
+// リクエストハンドラ関数
+// -----------------------------------------------
 
+/**
+ * 都道府県リストを取得するハンドラ
+ */
+async function handleGetPrefectures(req, res) {
+    return res.status(200).json(prefectures);
+}
+
+/**
+ * 指定された都道府県の市区町村リストを取得するハンドラ
+ */
+async function handleGetCities(req, res) {
+    const prefCode = req.query.prefCode;
+    if (!prefCode) {
+        return res.status(400).send('Prefecture code is required.');
+    }
+    
+    const query = `
+        query {
+          municipalities(prefCodes: [${parseInt(prefCode, 10)}]) {
+            name
+          }
+        }
+    `;
+      
+    const response = await axios({
+        url: 'https://www.mlit-data.jp/api/v1/',
+        method: 'post',
+        headers: {
+            'Content-Type': 'application/json',
+            'apikey': MLIT_API_KEY
+        },
+        data: {
+            query: query
+        }
+    });
+
+    if (response.data && response.data.data && response.data.data.municipalities && Array.isArray(response.data.data.municipalities)) {
+        const cities = response.data.data.municipalities.map(item => item.name);
+        return res.status(200).json(cities);
+    } else {
+        if(response.data && response.data.errors) {
+            console.error('GraphQL Errors:', response.data.errors);
+        }
+        throw new Error('Unexpected data format from MLIT API');
+    }
+}
+
+// -----------------------------------------------
+// メインのAPIルート
+// -----------------------------------------------
 app.get('/', async (req, res) => {
   if (!MLIT_API_KEY) {
     return res.status(500).send('API Key is not configured on the server.');
@@ -36,61 +88,28 @@ app.get('/', async (req, res) => {
   const apiType = req.query.api;
   
   try {
+    // リクエストに応じて、適切なハンドラ関数を呼び出す
     if (apiType === 'prefectures') {
-      return res.status(200).json(prefectures);
-
+      return await handleGetPrefectures(req, res);
     } else if (apiType === 'cities') {
-      const prefCode = req.query.prefCode;
-      if (!prefCode) {
-        return res.status(400).send('Prefecture code is required.');
-      }
-      
-      const query = `
-        query {
-          municipalities(prefCodes: [${parseInt(prefCode, 10)}]) {
-            name
-          }
-        }
-      `;
-      
-      const response = await axios({
-        url: 'https://www.mlit-data.jp/api/v1/',
-        method: 'post',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': MLIT_API_KEY
-        },
-        data: {
-          query: query
-        }
-      });
-
-      if (response.data && response.data.data && response.data.data.municipalities && Array.isArray(response.data.data.municipalities)) {
-        const cities = response.data.data.municipalities.map(item => item.name);
-        return res.status(200).json(cities);
-      } else {
-         // もし data.errors があれば、それをログに出力
-         if(response.data && response.data.errors) {
-            console.error('GraphQL Errors:', response.data.errors);
-         }
-         throw new Error('Unexpected data format from MLIT API');
-      }
-
+      return await handleGetCities(req, res);
     } else {
       return res.status(400).send('Invalid API type specified.');
     }
-
   } catch (error) {
     if (error.response) {
-      console.error(`Error with API (${error.config.url}):`, error.response.status, error.response.data);
-      res.status(error.response.status).send(error.response.data);
+      console.error(`Error with API:`, error.response.status, error.response.data);
+      return res.status(error.response.status).send(error.response.data);
     } else {
       console.error('Error with API:', error.message);
-      res.status(500).send('Failed to fetch data from the external API.');
+      return res.status(500).send('Failed to fetch data from the external API.');
     }
   }
 });
 
+// -----------------------------------------------
+// サーバー起動
+// -----------------------------------------------
 function startServer() {
     if (!MLIT_API_KEY) {
         console.error('FATAL ERROR: MLIT_API_KEY environment variable is not set. Server will not start.');
