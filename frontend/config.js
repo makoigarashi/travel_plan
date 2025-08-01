@@ -1,10 +1,18 @@
 // =============================================
 // アプリケーション設定ファイル (config.js)
 // =============================================
+const API_ENDPOINTS = {
+        // 本番環境（GCS）で使うURL
+        production: 'https://geo-api-proxy-160651572780.asia-northeast1.run.app',
+        // 開発環境（ローカル）で使うURL
+        development: 'http://localhost:8080'
+    };
 
 const AppConfig = {
-    // ★★★ あなたのCloud RunのURLをここに設定してください ★★★
-    API_ENDPOINT: 'https://geo-api-proxy-160651572780.asia-northeast1.run.app',
+    // 現在の環境（ホスト名）に応じて、使用するAPIエンドポイントを自動で選択
+    API_ENDPOINT: (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
+                  ? API_ENDPOINTS.development
+                  : API_ENDPOINTS.production,
 
     // デバッグモードのON/OFF
     DEBUG_FLAG: false,
