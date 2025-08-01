@@ -117,6 +117,14 @@ $(document).ready(function(){
     const placeTemplate = Handlebars.compile($('#place-input-template').html());
     const markdownTemplate = Handlebars.compile($('#markdown-template').html());
 
+    // 現在のホスト名を取得
+    const hostname = window.location.hostname;
+    
+    // もしローカル開発環境なら、テストボタンを表示する
+    if (hostname === '127.0.0.1' || hostname === 'localhost') {
+        $('#run-tests-btn').show();
+    }
+
     const randomPrefix = AppConfig.prefixes[Math.floor(Math.random() * AppConfig.prefixes.length)];
     $('#version-info').text(`${randomPrefix}出発地設定・複数日対応版 (Ver. FINAL-STABLE)`);
     
