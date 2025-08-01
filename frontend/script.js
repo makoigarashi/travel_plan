@@ -271,37 +271,86 @@ $(document).ready(function(){
     });
 
     $('.generate-btn').on('click', function(){
-        const templateData = { general: {}, days: [], proactiveSuggestions: $('#proactive-suggestions').is(':checked') };
-        templateData.general.departure = $('#departure-point').val();
-        templateData.general.members = $('#members').val();
-        templateData.general.theme = $('#theme').val();
-        templateData.general.priority = $('#priority').val();
-        $('.day-plan').each(function(index){
-            const $dayDiv = $(this); const dateVal = $dayDiv.find('.travel-date').val();
-            let date = null; if(dateVal) { date = new Date(dateVal + 'T00:00:00'); }
-            const prefCode = $dayDiv.find('.prefecture-select').val();
-            const prefName = prefectures[prefCode] || '';
-            const cityName = $dayDiv.find('.city-select').val();
-            let areaText = prefName;
-            if (cityName) { areaText += ` (${cityName})`; }
-            const dayData = {
-                dayNumber: index + 1,
-                date: date ? `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}` : '',
-                dayOfWeek: date ? ['日', '月', '火', '水', '木', '金', '土'][date.getDay()] : '',
-                area: areaText,
-                accommodation: $dayDiv.find('.accommodation').val(),
-                places: [],
-                doEat: $dayDiv.find('.must-do-eat').val().trim().split('\n').filter(Boolean),
-                notes: $dayDiv.find('.day-specific-notes').val().trim().split('\n').filter(Boolean)
-            };
-            $dayDiv.find('.places-container .dynamic-input-group').each(function(){
-                const name = $(this).find('.place-name').val().trim();
-                const url = $(this).find('.place-url').val().trim();
-                if (name) dayData.places.push({ name: name, url: url });
+        let markdown = "";
+        const isSuggestionMode = $('#ai-suggestion-mode').is(':checked');
+
+        // 共通のフッター部分を先に生成
+        const footerTemplateData = {
+            proactiveSuggestions: $('#proactive-suggestions').is(':checked')
+        };
+        // Handlebarsのテンプレートからフッター部分だけを抜き出して使う
+        const footerTemplateHtml = $('#markdown-template').html();
+        const footerStartIndex = footerTemplateHtml.indexOf('### AIへの特別指示');
+        const footerTemplate = Handlebars.compile(footerTemplateHtml.substring(footerStartIndex));
+        const footerMarkdown = footerTemplate(footerTemplateData);
+
+        if (isSuggestionMode) {
+            // --- AI提案モード用のプロンプト ---
+            const startDate = $('#trip-start-date').val();
+            const endDate = $('#trip-end-date').val();
+            let durationText = '';
+            if (startDate && endDate) {
+                // 日付から泊数を計算する簡易ロジック
+                const start = new Date(startDate);
+                const end = new Date(endDate);
+                const diffTime = Math.abs(end - start);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                if (diffDays === 0) {
+                    durationText = `日帰り (${startDate})`;
+                } else {
+                    durationText = `${diffDays}泊${diffDays + 1}日 (${startDate} ～ ${endDate})`;
+                }
+            }
+
+            let suggestionMarkdown = `# ★★★ 行先提案モード ★★★
+あなたが行先も含めて、最高の旅行プランを提案してください。
+
+### 旅行の基本条件
+*   **出発地**: ${$('#departure-point').val()}
+*   **到着空港・駅**: ${$('#arrival-point').val()}
+*   **旅行期間**: ${durationText}
+*   **メンバー構成・体力レベル**: ${$('#members').val()}
+*   **旅のキーワード**: ${$('#trip-keywords').val()}
+*   **最優先事項**: ${$('#priority').val()}
+*   **備考・その他の要望**: 
+    *   ${$('#trip-remarks').val().split('\n').join('\n    *   ')}
+---
+`;
+            markdown = suggestionMarkdown + footerMarkdown;
+
+        } else {
+            const templateData = { general: {}, days: [], proactiveSuggestions: $('#proactive-suggestions').is(':checked') };
+            templateData.general.departure = $('#departure-point').val();
+            templateData.general.members = $('#members').val();
+            templateData.general.theme = $('#theme').val();
+            templateData.general.priority = $('#priority').val();
+            $('.day-plan').each(function(index){
+                const $dayDiv = $(this); const dateVal = $dayDiv.find('.travel-date').val();
+                let date = null; if(dateVal) { date = new Date(dateVal + 'T00:00:00'); }
+                const prefCode = $dayDiv.find('.prefecture-select').val();
+                const prefName = prefectures[prefCode] || '';
+                const cityName = $dayDiv.find('.city-select').val();
+                let areaText = prefName;
+                if (cityName) { areaText += ` (${cityName})`; }
+                const dayData = {
+                    dayNumber: index + 1,
+                    date: date ? `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}` : '',
+                    dayOfWeek: date ? ['日', '月', '火', '水', '木', '金', '土'][date.getDay()] : '',
+                    area: areaText,
+                    accommodation: $dayDiv.find('.accommodation').val(),
+                    places: [],
+                    doEat: $dayDiv.find('.must-do-eat').val().trim().split('\n').filter(Boolean),
+                    notes: $dayDiv.find('.day-specific-notes').val().trim().split('\n').filter(Boolean)
+                };
+                $dayDiv.find('.places-container .dynamic-input-group').each(function(){
+                    const name = $(this).find('.place-name').val().trim();
+                    const url = $(this).find('.place-url').val().trim();
+                    if (name) dayData.places.push({ name: name, url: url });
+                });
+                templateData.days.push(dayData);
             });
-            templateData.days.push(dayData);
-        });
-        const markdown = markdownTemplate(templateData);
+            markdown = markdownTemplate(templateData);
+        }
         const $outputTextarea = $('#output-markdown');
         $outputTextarea.val(markdown);
         $('#output-area').slideDown();
@@ -314,6 +363,20 @@ $(document).ready(function(){
          document.execCommand('copy');
          alert('プロンプトをクリップボードにコピーしました！');
     });
+
+    $('#ai-suggestion-mode').on('change', function() {
+        const isSuggestionMode = $(this).is(':checked');
+        if (isSuggestionMode) {
+            $('#ai-suggestion-inputs').slideDown();
+            // 「旅行全体の基本情報」以外の通常フォームを隠す
+            $('#days-container, .add-day-btn, #prompt-form > fieldset:nth-of-type(2)').slideUp();
+        } else {
+            $('#ai-suggestion-inputs').slideUp();
+            // 通常フォームを再表示
+            $('#days-container, .add-day-btn, #prompt-form > fieldset:nth-of-type(2)').slideDown();
+        }
+    });
+    
 
     fetchPrefectures().done(function() {
         addDay(); 
