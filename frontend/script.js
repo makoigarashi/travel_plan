@@ -1,5 +1,7 @@
 const DEBUG_FLAG = AppConfig.DEBUG_FLAG;
 
+const walkerplusAreaCodes = AppConfig.walkerplusAreaCodes;
+
 function parseMarkdownFromText(text) {
     const data = { general: {}, days: [] };
     const tokens = marked.lexer(text);
@@ -189,7 +191,46 @@ $(document).ready(function(){
         $container.append(placeHtml);
     }
 
+    // ボタンの活性/非活性を制御する
+    function updateEventButtonState($dayDiv) {
+        const dateVal = $dayDiv.find('.travel-date').val();
+        const prefCode = $dayDiv.find('.prefecture-select').val();
+        const $button = $dayDiv.find('.search-events-btn');
+
+        if (dateVal && prefCode) {
+            $button.prop('disabled', false); // 両方入力されていれば活性化
+        } else {
+            $button.prop('disabled', true);  // どちらかが空なら非活性化
+        }
+    }
+
+    // 日付と都道府県の選択が変更されたら、ボタンの状態を更新
+    $('#days-container').on('change', '.travel-date, .prefecture-select', function() {
+        const $dayDiv = $(this).closest('.day-plan');
+        updateEventButtonState($dayDiv);
+    });
+
+    // イベント検索ボタンが押された時の処理
+    $('#days-container').on('click', '.search-events-btn', function() {
+        const $dayDiv = $(this).closest('.day-plan');
+        const dateVal = $dayDiv.find('.travel-date').val(); 
+        const prefCode = $dayDiv.find('.prefecture-select').val();
         
+        const prefName = prefectures[prefCode];
+        const areaCode = AppConfig.walkerplusAreaCodes[prefName];
+        
+        if (areaCode && dateVal) {
+            const date = new Date(dateVal);
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
+            const mmdd = month + day;
+            
+            const targetUrl = `${AppConfig.walkerplus.baseUrl}${mmdd}/${areaCode}/`;
+            window.open(targetUrl, '_blank');
+        } else {
+            alert('日付と都道府県の両方を選択してください。');
+        }
+    });        
 
     $('.add-day-btn').on('click', function(){ addDay(); });
     $('.toggle-import-btn').on('click', function(){ $('#import-area').slideToggle(); });
