@@ -4,11 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>旅行プラン・プロンプトジェネレーター (marked.js版)</title>
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
-    <!-- ★★★★★★★ marked.jsライブラリの読み込み ★★★★★★★ -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+      .modal__overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.6); display: flex; justify-content: center; align-items: center; z-index: 100; }
+      .modal__container { background-color: #fff; padding: 20px; width: 90%; max-width: 700px; max-height: 90vh; border-radius: 8px; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,.3); }
+      .modal__header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 15px;}
+      .modal__title { margin: 0; font-size: 1.5rem; font-weight: bold; }
+      .modal__close { background: transparent; border: 0; cursor: pointer; width: 30px; height: 30px; position: relative; }
+      .modal__close:before, .modal__close:after { position: absolute; content: ''; width: 2px; height: 20px; background-color: #333; top: 5px; left: 14px;}
+      .modal__close:before { transform: rotate(45deg); }
+      .modal__close:after { transform: rotate(-45deg); }
+      .modal__content { margin-top: 1.5rem; }
+      .modal[aria-hidden="true"] { display: none; }
+    </style>
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-5">
     <!-- ★★★ テスト実行ボタンをここに追加 ★★★ -->
@@ -102,6 +110,38 @@
         </div>
     </div>
 
+    <!-- Modals and Templates -->
+    <div class="modal micromodal-slide" id="modal-prefecture" aria-hidden="true">
+        <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+            <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-prefecture-title">
+                <header class="modal__header">
+                    <h2 class="modal__title" id="modal-prefecture-title">都道府県を選択</h2>
+                    <button class="modal__close" aria-label="閉じる" data-micromodal-close></button>
+                </header>
+                <main class="modal__content" id="modal-prefecture-content"></main>
+            </div>
+        </div>
+    </div>
+
+    <script id="prefecture-list-template" type="text/x-handlebars-template">
+        {{#each regions}}
+        <div class="mb-6">
+            <h3 class="text-xl font-bold border-b-2 border-blue-500 pb-2 mb-3">{{@key}}</h3>
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                {{#each this}}
+                <button 
+                    type="button" 
+                    class="prefecture-select-btn p-2 border rounded-md text-center hover:bg-blue-100 hover:border-blue-500 transition-colors"
+                    data-pref-code="{{this.code}}" 
+                    data-pref-name="{{this.name}}">
+                    {{this.name}}
+                </button>
+                {{/each}}
+            </div>
+        </div>
+        {{/each}}
+    </script>
+
     <!-- Handlebars Templates -->
     <script id="day-plan-template" type="text/x-handlebars-template">
         <div class="border-2 border-dashed border-blue-500 p-6 mb-6 rounded-lg day-plan" data-day="{{dayNumber}}">
@@ -113,17 +153,11 @@
             <input type="date" class="travel-date w-full p-2 border border-gray-300 rounded-md mb-4">
             <label class="block mb-2 font-semibold">主な活動エリア</label>
             <div class="flex gap-4 mb-4">
-                <select class="prefecture-select w-1/2 p-2 border border-gray-300 rounded-md">
-                    <option value="">都道府県を選択</option>
-                    {{#each prefectures}}
-                        <option value="{{this.code}}">{{this.name}}</option>
-                    {{/each}}
-                </select>
+                <button type="button" class="open-prefecture-modal-btn w-1/2 p-2 border border-gray-300 rounded-md text-left text-gray-500" data-pref-code="">都道府県を選択</button>
                 <select class="city-select w-1/2 p-2 border border-gray-300 rounded-md" disabled><option value="">市町村</option></select>
             </div>
             <label class="block mb-2 font-semibold">宿泊先／最終目的地</label>
             <input type="text" class="accommodation w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：ホテル、空港など">
-            <button type="button" class="mt-4 mb-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-colors search-events-btn disabled:opacity-50 disabled:cursor-not-allowed" disabled>この日のイベントを検索する (Walker+)</button>
             <label class="block mb-2 font-semibold">この日に行きたい場所</label>
             <div class="dynamic-input-container places-container"></div>
             <button type="button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 text-sm rounded-lg -mt-2 add-item-btn add-place-btn">場所を追加</button>
@@ -131,8 +165,10 @@
             <textarea class="must-do-eat w-full p-2 border border-gray-300 rounded-md min-h-[80px]"></textarea>
             <label class="block mt-4 mb-2 font-semibold">交通パス・時間指定など</label>
             <textarea class="day-specific-notes w-full p-2 border border-gray-300 rounded-md min-h-[80px]"></textarea>
+            <button type="button" class="mt-4 mb-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-colors search-events-btn disabled:opacity-50 disabled:cursor-not-allowed" disabled>この日のイベントを検索する (Walker+)</button>
         </div>
     </script>
+    
     <script id="place-input-template" type="text/x-handlebars-template">
         <div class="flex gap-2 items-center mb-3 dynamic-input-group">
             <input type="text" class="place-name w-full p-2 border border-gray-300 rounded-md grow" placeholder="場所の名前" value="{{name}}">
@@ -186,6 +222,11 @@
 提案は、メインのプランとは別に**『プランナーからの+α提案』**というセクションを設けて記載し、**素晴らしいアイデアがあれば複数提案することを歓迎します。**その際、それぞれの提案について、**『何を』『なぜおすすめなのか』『それを実行する場合、スケジュールのどこをどう調整する必要があるか』**を具体的に明記してください。
 {{/if}}
     </script>
+
+    <script src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <script src="config.js"></script>
     <script src="script.js"></script>
