@@ -112,12 +112,14 @@ function parseMarkdownFromText(text) {
 $(document).ready(function(){
     let dayCount = 0;
     let prefectures = {}; 
+    let currentPrefButton = null; // どの日のボタンが押されたかを記憶
 
     const API_ENDPOINT = AppConfig.API_ENDPOINT;
 
     const dayTemplate = Handlebars.compile($('#day-plan-template').html());
     const placeTemplate = Handlebars.compile($('#place-input-template').html());
     const markdownTemplate = Handlebars.compile($('#markdown-template').html());
+    const prefectureListTemplate = Handlebars.compile($('#prefecture-list-template').html());
 
     // 現在のホスト名を取得
     const hostname = window.location.hostname;
@@ -136,6 +138,19 @@ $(document).ready(function(){
     $('#theme').attr('placeholder',AppConfig.defaultValues.theme);
     $('#priority').attr('placeholder',AppConfig.defaultValues.priority);
 
+    function initializePrefectureModal() {
+        const regions = { "北海道": [], "東北": [], "関東": [], "中部": [], "近畿": [], "中国": [], "四国": [], "九州・沖縄": [] };
+        Object.keys(AppConfig.geoData).forEach(prefName => {
+            const data = AppConfig.geoData[prefName];
+            if (regions[data.region]) {
+                regions[data.region].push({ name: prefName, code: data.code });
+            }
+        });
+        const modalContentHtml = prefectureListTemplate({ regions: regions });
+        $('#modal-prefecture-content').html(modalContentHtml);
+        MicroModal.init();
+    }
+
     function fetchPrefectures() {
         return $.getJSON(`${API_ENDPOINT}?api=prefectures`).done(function(data){
             prefectures = data;
@@ -146,8 +161,7 @@ $(document).ready(function(){
 
     function addDay(data = {}) {
         dayCount++;
-        const prefArray = Object.keys(prefectures).map(code => ({ code: code, name: prefectures[code] }));
-        const context = { dayNumber: dayCount, prefectures: prefArray };
+        const context = { dayNumber: dayCount };
         const dayHtml = dayTemplate(context);
         const $newDay = $(dayHtml);
         
@@ -155,12 +169,23 @@ $(document).ready(function(){
         
         if(data.area) {
             const prefName = data.area;
-            const prefCode = Object.keys(prefectures).find(key => prefectures[key] === prefName);
-            if (prefCode) {
-                $newDay.find('.prefecture-select').val(prefCode);
+            const prefData = AppConfig.geoData[prefName];
+            if (prefData) {
+                const $prefButton = $newDay.find('.open-prefecture-modal-btn');
+                $prefButton.text(prefName).data('pref-code', prefData.code).removeClass('text-gray-500');
+                updateEventButtonState($newDay);
                 // 市町村の反映は、API呼び出しが完了した後に行う必要があるため、
                 // triggerに渡すデータとしてcityを渡す
                 if (data.city) {
+                    // const $citySelect = $newDay.find('.city-select');
+                    // $citySelect.prop('disabled', false).html('<option value="">読み込み中...</option>');
+                    // $.getJSON(`${API_ENDPOINT}?api=cities&prefCode=${prefData.code}`, function(cities) {
+                    //     $citySelect.html('<option value="">市町村を選択</option>');
+                    //     if (cities && Array.isArray(cities)) {
+                    //         cities.forEach(cityName => $citySelect.append(`<option value="${cityName}">${cityName}</option>`));
+                    //         $citySelect.val(data.city);
+                    //     }
+                    // });
                     setTimeout(() => {
                          $newDay.find('.prefecture-select').trigger('change', [data.city]);
                     }, 500); // API通信のための適切な遅延
@@ -181,6 +206,7 @@ $(document).ready(function(){
         }
 
         $('#days-container').append($newDay);
+        updateEventButtonState($newDay);
     }
 
     function addPlace($container, placeData = {}) {
@@ -194,7 +220,7 @@ $(document).ready(function(){
     // ボタンの活性/非活性を制御する
     function updateEventButtonState($dayDiv) {
         const dateVal = $dayDiv.find('.travel-date').val();
-        const prefCode = $dayDiv.find('.prefecture-select').val();
+        const prefCode = $dayDiv.find('.open-prefecture-modal-btn').data('pref-code');
         const $button = $dayDiv.find('.search-events-btn');
 
         if (dateVal && prefCode) {
@@ -213,22 +239,42 @@ $(document).ready(function(){
     // イベント検索ボタンが押された時の処理
     $('#days-container').on('click', '.search-events-btn', function() {
         const $dayDiv = $(this).closest('.day-plan');
+        // 日付を取得
         const dateVal = $dayDiv.find('.travel-date').val(); 
-        const prefCode = $dayDiv.find('.prefecture-select').val();
         
-        const prefName = prefectures[prefCode];
-        const areaCode = AppConfig.walkerplusAreaCodes[prefName];
+        // ★ 都道府県コードを、ボタンのdata属性から取得するように修正 ★
+        const prefCode = $dayDiv.find('.open-prefecture-modal-btn').data('pref-code');
         
-        if (areaCode && dateVal) {
-            const date = new Date(dateVal);
-            const month = (date.getMonth() + 1).toString().padStart(2, '0');
-            const day = date.getDate().toString().padStart(2, '0');
-            const mmdd = month + day;
-            
-            const targetUrl = `${AppConfig.walkerplus.baseUrl}${mmdd}/${areaCode}/`;
-            window.open(targetUrl, '_blank');
-        } else {
+        // (日付と都道府県コードの両方が存在するか、改めてチェック)
+        if (!dateVal || !prefCode) {
             alert('日付と都道府県の両方を選択してください。');
+            return;
+        }
+
+        // コードから都道府県名を取得
+        const prefName = Object.keys(AppConfig.geoData).find(name => AppConfig.geoData[name].code === prefCode);
+        
+        if (prefName) {
+            // configからウォーカープラスのエリアコードを取得
+            const areaCode = AppConfig.geoData[prefName]?.walkerCode;
+
+            if (areaCode) {
+                // 日付をMMDD形式に変換
+                const date = new Date(dateVal);
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                const day = date.getDate().toString().padStart(2, '0');
+                const mmdd = month + day;
+                
+                // configからベースURLを取得して、最終的なURLを組み立てる
+                const targetUrl = `${AppConfig.walkerplus.baseUrl}${mmdd}/${areaCode}/`;
+                
+                // 新しいタブでウォーカープラスを開く
+                window.open(targetUrl, '_blank');
+            } else {
+                alert('この都道府県のエリアコードが見つかりませんでした。');
+            }
+        } else {
+            alert('選択された都道府県コードに対応する名前が見つかりませんでした。');
         }
     });        
 
@@ -259,6 +305,11 @@ $(document).ready(function(){
             alert('市町村データの取得に失敗しました。');
         });
     });
+
+    // 日付が変更された「後」にも、状態更新を呼び出す
+    $('#days-container').on('change', '.travel-date', function() {
+        updateEventButtonState($(this).closest('.day-plan'));
+    });
     
     $('#days-container').on('click', '.remove-day-btn', function(){
          const $dayPlan = $(this).closest('.day-plan');
@@ -281,10 +332,39 @@ $(document).ready(function(){
              alert('最低でも1つの入力欄は必要です。');
          }
     });
-    
-    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
-    // ★ ここが今回の修正ポイントです！(パーサーの最終完全版) ★
-    // ★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★★
+
+    // 都道府県選択ボタンが押されたら、モーダルを開く
+    $('#days-container').on('click', '.open-prefecture-modal-btn', function() {
+        currentPrefButton = $(this);
+        MicroModal.show('modal-prefecture');
+    });
+
+    // モーダル内の都道府県がクリックされたら
+    $('#modal-prefecture-content').on('click', '.prefecture-select-btn', function() {
+        if (currentPrefButton) {
+            const prefCode = $(this).data('pref-code');
+            const prefName = $(this).data('pref-name');
+            currentPrefButton.text(prefName).data('pref-code', prefCode).removeClass('text-gray-500');
+            
+            const $dayDiv = currentPrefButton.closest('.day-plan');
+            const $citySelect = $dayDiv.find('.city-select');
+            
+            $citySelect.html('<option value="">読み込み中...</option>').prop('disabled', true);
+            $.getJSON(`${API_ENDPOINT}?api=cities&prefCode=${prefCode}`, function(data) {
+                $citySelect.html('<option value="">市町村を選択</option>').prop('disabled', false);
+                if (data && Array.isArray(data)) {
+                    data.forEach(cityName => { $citySelect.append(`<option value="${cityName}">${cityName}</option>`); });
+                }
+            }).fail(function() {
+                $citySelect.html('<option value="">取得失敗</option>').prop('disabled', true);
+            });
+            
+            MicroModal.close('modal-prefecture');
+            updateEventButtonState($dayDiv);
+        }
+    });
+
+    // パーサー
     $('.import-button').on('click', function(){
         const text = $('#import-prompt').val();
 
@@ -419,6 +499,8 @@ $(document).ready(function(){
     });
     
 
+    // 初期化処理
+    initializePrefectureModal();
     fetchPrefectures().done(function() {
         addDay(); 
     });
