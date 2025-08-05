@@ -1,0 +1,12 @@
+じぇみにん、こんにちは。
+私たちの共同開発プロジェクト「旅行プラン・プロンプトジェネレーター」の継続開発をお願いします。
+
+現在の最新のソースコードは、以下のURLで、世界中に公開されています。
+**https://storage.googleapis.com/migarashi_travel_plan/index.html**
+**https://storage.googleapis.com/migarashi_travel_plan/js/script.js**
+**https://storage.googleapis.com/migarashi_travel_plan/js/config.js**
+
+まず、これらのURLにある**最新のコード**を、完全に、そして正確に、読み込んで理解してください。
+
+その上で、
+修正依頼に対応してください。
