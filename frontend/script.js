@@ -139,14 +139,23 @@ $(document).ready(function(){
     $('#priority').attr('placeholder',AppConfig.defaultValues.priority);
 
     function initializePrefectureModal() {
-        const regions = { "北海道": [], "東北": [], "関東": [], "中部": [], "近畿": [], "中国": [], "四国": [], "九州・沖縄": [] };
-        Object.keys(AppConfig.geoData).forEach(prefName => {
-            const data = AppConfig.geoData[prefName];
-            if (regions[data.region]) {
-                regions[data.region].push({ name: prefName, code: data.code });
+        const regionsGrouped = {};
+        // geoDataのキー（都道府県コード）でループ
+        Object.keys(AppConfig.regions).sort((a, b) => parseInt(a) - parseInt(b)).forEach(regionId => {
+            const regionName = AppConfig.regions[regionId].name;
+            regionsGrouped[regionName] = [];
+        });
+
+        Object.keys(AppConfig.geoData).forEach(prefCode => {
+            const prefData = AppConfig.geoData[prefCode];
+            const regionId = prefData.regionId;
+            const regionName = AppConfig.regions[regionId].name;
+            if (regionsGrouped[regionName]) {
+                regionsGrouped[regionName].push({ name: prefData.name, code: prefCode });
             }
         });
-        const modalContentHtml = prefectureListTemplate({ regions: regions });
+
+        const modalContentHtml = prefectureListTemplate({ regions: regionsGrouped });
         $('#modal-prefecture-content').html(modalContentHtml);
         MicroModal.init();
     }
@@ -239,43 +248,29 @@ $(document).ready(function(){
     // イベント検索ボタンが押された時の処理
     $('#days-container').on('click', '.search-events-btn', function() {
         const $dayDiv = $(this).closest('.day-plan');
-        // 日付を取得
         const dateVal = $dayDiv.find('.travel-date').val(); 
-        
-        // ★ 都道府県コードを、ボタンのdata属性から取得するように修正 ★
+        // ★ ボタンからは、常に「都道府県コード」を取得
         const prefCode = $dayDiv.find('.open-prefecture-modal-btn').data('pref-code');
         
-        // (日付と都道府県コードの両方が存在するか、改めてチェック)
-        if (!dateVal || !prefCode) {
-            alert('日付と都道府県の両方を選択してください。');
-            return;
-        }
+        if (!dateVal || !prefCode) { /* ... */ }
 
-        // コードから都道府県名を取得
-        const prefName = Object.keys(AppConfig.geoData).find(name => AppConfig.geoData[name].code === prefCode);
+        const prefData = AppConfig.geoData[prefCode];
+        if (!prefData) { return; }
+
+        const regionId = prefData.regionId;
+        const regionCode = regionId; // regionのキーが、そのままwalkerCodeになる
         
-        if (prefName) {
-            // configからウォーカープラスのエリアコードを取得
-            const areaCode = AppConfig.geoData[prefName]?.walkerCode;
+        const areaCode = `${AppConfig.walkerplus.areaCodePrefix}${regionCode}${prefCode}`;
 
-            if (areaCode) {
-                // 日付をMMDD形式に変換
-                const date = new Date(dateVal);
-                const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                const day = date.getDate().toString().padStart(2, '0');
-                const mmdd = month + day;
-                
-                // configからベースURLを取得して、最終的なURLを組み立てる
-                const targetUrl = `${AppConfig.walkerplus.baseUrl}${mmdd}/${areaCode}/`;
-                
-                // 新しいタブでウォーカープラスを開く
-                window.open(targetUrl, '_blank');
-            } else {
-                alert('この都道府県のエリアコードが見つかりませんでした。');
-            }
-        } else {
-            alert('選択された都道府県コードに対応する名前が見つかりませんでした。');
-        }
+        const date = new Date(dateVal);
+        // 月日を取得
+        const mmdd = (date.getMonth() + 1).toString().padStart(2, '0') + date.getDate().toString().padStart(2, '0');
+        // テンプレートの{mmdd}と{areaCode}を、実際の値で置換する
+        const path = AppConfig.walkerplus.urlTemplate
+                        .replace('{mmdd}', mmdd)
+                        .replace('{areaCode}', areaCode);
+        const targetUrl = `${AppConfig.walkerplus.baseUrl}${path}`;
+        window.open(targetUrl, '_blank');
     });        
 
     $('.add-day-btn').on('click', function(){ addDay(); });
