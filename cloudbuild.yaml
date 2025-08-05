@@ -29,8 +29,16 @@ steps:
     - './frontend' # フロントエンドのコードがあるフォルダ
     - 'gs://migarashi_travel_plan' # あなたのGCSバケット名
 
-options:
-  logging: CLOUD_LOGGING_ONLY
+# ----------------------------------------------------------------------
+# Step 3: AIが参照するための、最新ソースコードを、別の場所にコピーする
+# ----------------------------------------------------------------------
+- name: 'gcr.io/cloud-builders/gsutil'
+  args:
+    - '-m'
+    - 'cp'
+    - '-r'
+    - './frontend' # コピー元のfrontendフォルダ
+    - 'gs://migarashi_travel_plan/latest_source' # コピー先のGCS上の場所
 
 # -----------------------------------------------
 # Step 3 (将来の拡張): シナリオテストの実行
@@ -41,6 +49,9 @@ options:
 # - name: 'node'
 #   entrypoint: 'npm'
 #   args: ['test'] # package.jsonにテストコマンドを定義しておく
+
+options:
+  logging: CLOUD_LOGGING_ONLY
 
 substitutions:
   _MLIT_API_KEY: 'DCFKdtWrE6tTRaZwSI0HACChBmD3PxJP' # ★ここにAPIキーを設定（後述）
