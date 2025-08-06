@@ -12,6 +12,9 @@ const MARKDOWN_GENERATOR = (function() {
     // 各テンプレートをコンパイル
     const markdownTemplate = Handlebars.compile($('#markdown-template').html());
     const suggestionMarkdownTemplate = Handlebars.compile($('#suggestion-markdown-template').html());
+    const footerTemplateHtml = $('#markdown-template').html();
+    const footerStartIndex = footerTemplateHtml.indexOf('### AIへの特別指示');
+    const footerTemplate = Handlebars.compile(footerTemplateHtml.substring(footerStartIndex));
 
     /**
      * AI提案モードのマークダウンを生成します。
