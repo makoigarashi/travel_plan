@@ -29,6 +29,9 @@ $(document).ready(function(){
         // --- イベントハンドラ ---
         setupEventHandlers();
 
+        // 初期表示の調整
+        $('#ai-suggestion-mode').trigger('change');
+
         // --- アプリケーション初期化 ---
         $.getJSON(`${API_ENDPOINT}?api=prefectures`).done(function(prefs){
             UI.initialize(prefs);
@@ -168,7 +171,7 @@ $(document).ready(function(){
         const isSuggestionMode = $(this).is(':checked');
         if (isSuggestionMode) {
             $('#ai-suggestion-inputs').slideDown();
-            $('#prompt-form > fieldset:not(:first-of-type), #days-container, .add-day-btn').slideUp();
+            $('#prompt-form > fieldset:not(:first-of-type):not(#ai-instruction-fieldset), #days-container, .add-day-btn').slideUp();
         } else {
             $('#ai-suggestion-inputs').slideUp();
             $('#prompt-form > fieldset:not(:first-of-type), #days-container, .add-day-btn').slideDown();
