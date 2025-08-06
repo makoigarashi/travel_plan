@@ -1,6 +1,16 @@
+/**
+ * @file アプリケーション全体の設定を定義します。
+ * @author Gemini
+ */
+
 // =============================================
 // アプリケーション設定ファイル (config.js)
 // =============================================
+
+/**
+ * APIエンドポイントの定義。
+ * @type {{production: string, development: string}}
+ */
 const API_ENDPOINTS = {
         // 本番環境（GCS）で使うURL
         production: 'https://geo-api-proxy-160651572780.asia-northeast1.run.app',
@@ -8,6 +18,17 @@ const API_ENDPOINTS = {
         development: 'http://localhost:8080'
     };
 
+/**
+ * アプリケーション設定オブジェクト。
+ * @property {string} API_ENDPOINT - 現在の環境に対応するAPIエンドポイント。
+ * @property {boolean} DEBUG_FLAG - デバッグモードの有効/無効フラグ。
+ * @property {object} defaultValues - フォームの初期値。
+ * @property {string[]} prefixes - バージョン情報に使われるランダムな接頭辞。
+ * @property {object} regions - 地方区分データ。
+ * @property {object} geoData - 都道府県データ。
+ * @property {object} walkerplus - Walker+連携のための設定。
+ * @property {string[]} dayNames - 曜日の名称配列。
+ */
 const AppConfig = {
     // 現在の環境（ホスト名）に応じて、使用するAPIエンドポイントを自動で選択
     API_ENDPOINT: (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')
@@ -76,5 +97,8 @@ const AppConfig = {
         urlTemplate: '{mmdd}/{areaCode}/',
         // エリアコードの接頭辞
         areaCodePrefix: 'ar'
-    },    
+    },
+
+    // 曜日
+    dayNames: ['日', '月', '火', '水', '木', '金', '土']
 };
