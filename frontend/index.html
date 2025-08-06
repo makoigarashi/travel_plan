@@ -228,9 +228,16 @@
     <script src="https://cdn.jsdelivr.net/npm/handlebars@latest/dist/handlebars.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-    <script src="config.js"></script>
-    <script src="script.js"></script>
-    <script src="test_scenarios.js"></script>
-    <script src="test_runner.js"></script>
+    <script src="js/config.js"></script>
+    <!-- 専門家たち（ヘルパー）を、先に読み込みます -->
+    <script src="js/data_manager.js"></script>
+    <script src="js/ui.js"></script>
+
+    <!-- テスト関連 -->
+    <script src="test_js/test_scenarios.js"></script>
+    <script src="test_js/test_runner.js"></script>
+
+    <!-- 最後に、司令塔（メインロジック）を読み込みます -->
+    <script src="js/main.js"></script>
 </body>
 </html>
