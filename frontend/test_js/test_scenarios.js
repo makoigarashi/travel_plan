@@ -61,7 +61,7 @@ const scenarios = [
                     area: "神奈川",
                     city: "横浜市",
                     places: [
-                        { name: "カップヌードルミュージアム" }
+                        { name: "カップヌードルミュージアム",url: "" }
                     ],
                     doEat: [],
                     notes: []
