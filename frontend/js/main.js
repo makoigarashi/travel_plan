@@ -15,7 +15,7 @@ $(document).ready(function(){
     $('#priority').attr('placeholder', AppConfig.defaultValues.priority);
 
     const randomPrefix = AppConfig.prefixes[Math.floor(Math.random() * AppConfig.prefixes.length)];
-    $('#version-info').text(`${randomPrefix}出発地設定・複数日対応版 (Ver. 3.0-merged)`);
+    $('#version-info').text(`${randomPrefix}出発地設定・複数日対応版 (Ver. 4.0-beta)`);
 
     // --- イベントハンドラ ---
     // テストボタンはローカル環境でのみ表示
@@ -25,10 +25,6 @@ $(document).ready(function(){
 
     $('.add-day-btn').on('click', () => UI.addDay());
     $('.toggle-import-btn').on('click', () => $('#import-area').slideToggle());
-
-    $('#save-plan-btn').on('click', DATA_MANAGER.save);
-    $('#load-plan-btn').on('click', DATA_MANAGER.load);
-    $('#delete-plan-btn').on('click', DATA_MANAGER.delete);
 
     $('#days-container')
         .on('click', '.open-prefecture-modal-btn', function() {
@@ -62,7 +58,6 @@ $(document).ready(function(){
             if (!prefData) { alert('都道府県の地域情報が見つかりません。'); return; }
 
             const regionCode = prefData.regionId;
-            // walkerplusのエリアコードを生成 (ar + 地域コード2桁 + 都道府県コード2桁)
             const areaCode = `${AppConfig.walkerplus.areaCodePrefix || 'ar'}${regionCode}${prefCode}`;
             const date = new Date(dateVal);
             const mmdd = (date.getMonth() + 1).toString().padStart(2, '0') + date.getDate().toString().padStart(2, '0');
@@ -111,9 +106,12 @@ $(document).ready(function(){
 
     $('.import-button').on('click', function() {
         try {
-            const text = $('#import-prompt').val();
-            if (!text.trim()) { alert('プロンプトを貼り付けてください。'); return; }
-            const data = DATA_MANAGER.parseMarkdownFromText(text);
+            let markdownToParse = $('#import-prompt').val().trim();
+            if (!markdownToParse) {
+                alert('読み込むプロンプトをテキストエリアに貼り付けてください。');
+                return;
+            }
+            const data = DATA_MANAGER.parseMarkdownFromText(markdownToParse);
             if (data) {
                 UI.populateFormFromData(data);
                 alert('フォームにプロンプトの内容を反映しました！');
@@ -142,11 +140,12 @@ $(document).ready(function(){
                 durationText = diffDays === 0 ? `日帰り (${startDate})` : `${diffDays}泊${diffDays + 1}日 (${startDate} ～ ${endDate})`;
             }
             const remarks = $('#trip-remarks').val().trim().split('\n').filter(Boolean);
-            markdown = `# ★★★ 行先提案モード ★★★\nあなたが行先も含めて、最高の旅行プランを提案してください。\n\n### 旅行の基本条件\n*   **出発地**: ${$('#departure-point').val()}\n*   **到着空港・駅**: ${$('#arrival-point').val()}\n*   **旅行期間**: ${durationText}\n*   **メンバー構成・体力レベル**: ${$('#members').val()}\n*   **旅のキーワード**: ${$('#trip-keywords').val()}\n*   **最優先事項**: ${$('#priority').val()}\n*   **備考・その他の要望**:\n${remarks.length > 0 ? remarks.map(r => `    *   ${r}`).join('\n') : '    *   特になし'}\n---\n`;
+            let suggestionMarkdown = `# ★★★ 行先提案モード ★★★\nあなたが行先も含めて、最高の旅行プランを提案してください.\n\n### 旅行の基本条件\n*   **出発地**: ${$('#departure-point').val()}\n*   **到着空港・駅**: ${$('#arrival-point').val()}\n*   **旅行期間**: ${durationText}\n*   **メンバー構成・体力レベル**: ${$('#members').val()}\n*   **旅のキーワード**: ${$('#trip-keywords').val()}\n*   **最優先事項**: ${$('#priority').val()}\n*   **備考・その他の要望**:\n${remarks.length > 0 ? remarks.map(r => `    *   ${r}`).join('\n') : '    *   特になし'}\n---\n`;
             const footerTemplateHtml = $('#markdown-template').html();
             const footerStartIndex = footerTemplateHtml.indexOf('### AIへの特別指示');
             const footerTemplate = Handlebars.compile(footerTemplateHtml.substring(footerStartIndex));
-            markdown += footerTemplate({ proactiveSuggestions: $('#proactive-suggestions').is(':checked') });
+            suggestionMarkdown += footerTemplate({ proactiveSuggestions: $('#proactive-suggestions').is(':checked') });
+            markdown = suggestionMarkdown;
 
         } else {
             const templateData = DATA_MANAGER.getCurrentFormData();
@@ -162,6 +161,11 @@ $(document).ready(function(){
             templateData.proactiveSuggestions = $('#proactive-suggestions').is(':checked');
             markdown = markdownTemplate(templateData);
         }
+
+        // ★自動保存
+        DATA_MANAGER.saveMarkdown(markdown);
+        UI.showStatusMessage('プロンプトを生成し、自動保存しました。');
+
         const $outputTextarea = $('#output-markdown');
         $outputTextarea.val(markdown);
         $('#output-area').slideDown();
@@ -178,6 +182,21 @@ $(document).ready(function(){
     // --- アプリケーション初期化 ---
     $.getJSON(`${API_ENDPOINT}?api=prefectures`).done(function(prefs){
         UI.initialize(prefs);
+
+        const savedMarkdown = DATA_MANAGER.loadMarkdown();
+        if (savedMarkdown) {
+            if (confirm('以前保存したプランが見つかりました。復元しますか？\n（キャンセルするとデータは削除されます）')) {
+                const data = DATA_MANAGER.parseMarkdownFromText(savedMarkdown);
+                if (data) {
+                    UI.populateFormFromData(data);
+                    UI.showStatusMessage('以前のプランを復元しました。');
+                }
+            } else {
+                DATA_MANAGER.deleteMarkdown();
+                UI.showStatusMessage('保存されていたプランを削除しました。');
+            }
+        }
+
     }).fail(function(){
         alert('アプリケーションの初期化に失敗しました。バックエンドが起動しているか確認してください。');
     });
