@@ -1,3 +1,8 @@
+/**
+ * @file UI関連のすべての操作を管理します。
+ * @author Gemini
+ */
+
 // =============================================
 // UI操作レイヤー (ui.js)
 // 役割：DOM操作、テンプレートの適用、UIイベントに応じた画面更新など、表示に関するすべてを担当します。
@@ -10,6 +15,10 @@ const UI = (function() {
     const placeTemplate = Handlebars.compile($('#place-input-template').html());
     const prefectureListTemplate = Handlebars.compile($('#prefecture-list-template').html());
 
+    /**
+     * 新しい日付プランのセクションをUIに追加します。
+     * @param {object} [data={}] - 新しい日付のフィールドに移入するオプションのデータ。
+     */
     function addDay(data = {}) {
         dayCount = $('#days-container .day-plan').length + 1;
         const context = { dayNumber: dayCount };
@@ -52,22 +61,35 @@ const UI = (function() {
         updateEventButtonState($newDay);
     }
 
+    /**
+     * 日付プランに新しい場所の入力フィールドを追加します。
+     * @param {jQuery} $container - 新しい場所の入力が追加されるコンテナ。
+     * @param {object} [placeData={}] - 場所のフィールドに移入するオプションのデータ。
+     */
     function addPlace($container, placeData = {}) {
         const placeHtml = placeTemplate({ name: placeData.name || '', url: placeData.url || '' });
         $container.append(placeHtml);
     }
 
+    /**
+     * 入力補完に基づいて「イベントを検索」ボタンの状態を更新します。
+     * @param {jQuery} $dayDiv - 日付プランコンテナのjQueryオブジェクト。
+     */
     function updateEventButtonState($dayDiv) {
         const dateVal = $dayDiv.find('.travel-date').val();
         const prefCode = $dayDiv.find('.open-prefecture-modal-btn').data('pref-code');
         const $button = $dayDiv.find('.search-events-btn');
         if (dateVal && prefCode) {
             $button.prop('disabled', false);
-        } else {
+        }
+        else {
             $button.prop('disabled', true);
         }
     }
 
+    /**
+     * 都道府県選択モーダルをデータで初期化します。
+     */
     function initializePrefectureModal() {
         const regionsGrouped = {};
         Object.keys(AppConfig.regions).sort((a, b) => parseInt(a) - parseInt(b)).forEach(regionId => {
@@ -87,6 +109,10 @@ const UI = (function() {
         MicroModal.init();
     }
 
+    /**
+     * 指定されたデータオブジェクトからフォーム全体に移入します。
+     * @param {object} data - フォームに移入するデータオブジェクト。
+     */
     function populateFormFromData(data) {
         if (!data) return;
 
@@ -101,10 +127,9 @@ const UI = (function() {
             $('#arrival-point').val(data.suggestion?.arrivalPoint || '');
             $('#trip-start-date').val(data.suggestion?.startDate || '');
             $('#trip-end-date').val(data.suggestion?.endDate || '');
-            $('#trip-keywords').val(data.suggestion?.keywords || '');
-            $('#trip-remarks').val(data.suggestion?.remarks || '');
-            // 通常モードのテーマはクリア
-            $('#theme').val('');
+            $('#trip-remarks').val(Array.isArray(data.suggestion?.remarks) ? data.suggestion.remarks.join('\n') : '');
+            // AI提案モードではテーマをクリアせず、パースされた値を設定
+            $('#theme').val(data.general?.theme || '');
         } else {
             // 通常モードのフォーム項目を設定
             $('#ai-suggestion-mode').prop('checked', false).trigger('change');
@@ -118,20 +143,38 @@ const UI = (function() {
                 addDay(); // データがない場合は空の1日を追加
             }
         }
+        // AI提案モードの表示状態を確実に更新
+        $('#ai-suggestion-mode').trigger('change');
     }
 
+    /**
+     * 数秒後にフェードアウトするステータスメッセージを表示します。
+     * @param {string} message - 表示するメッセージ。
+     */
     function showStatusMessage(message) {
         $('#save-status').text(message).fadeIn().delay(3000).fadeOut();
     }
 
+    /**
+     * インポート関連のステータスメッセージを表示します。
+     * @param {string} message - 表示するメッセージ。
+     */
     function showImportStatusMessage(message) {
         $('#import-status').text(message).fadeIn().delay(3000).fadeOut();
     }
 
+    /**
+     * Markdown関連のステータスメッセージを表示します。
+     * @param {string} message - 表示するメッセージ。
+     */
     function showMarkdownStatusMessage(message) {
         $('#markdown-status').text(message).fadeIn().delay(3000).fadeOut();
     }
 
+    /**
+     * 読み込まれたマークダウンを出力テキストエリアに表示します。
+     * @param {string} markdown - 表示するマークダウンコンテンツ。
+     */
     function displayLoadedMarkdown(markdown) {
         const $outputTextarea = $('#output-markdown');
         $outputTextarea.val(markdown);
@@ -141,6 +184,10 @@ const UI = (function() {
     }
 
     return {
+        /**
+         * UIモジュールを初期化します。
+         * @param {object} prefs - 都道府県データ。
+         */
         initialize: function(prefs) {
             prefectures = prefs;
             initializePrefectureModal();
@@ -155,6 +202,10 @@ const UI = (function() {
         showImportStatusMessage: showImportStatusMessage,
         showMarkdownStatusMessage: showMarkdownStatusMessage,
         displayLoadedMarkdown: displayLoadedMarkdown,
+        /**
+         * 都道府県オブジェクトを取得します。
+         * @returns {object} 都道府県オブジェクト。
+         */
         getPrefectures: () => prefectures
     };
 })();
