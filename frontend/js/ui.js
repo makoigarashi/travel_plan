@@ -89,17 +89,34 @@ const UI = (function() {
 
     function populateFormFromData(data) {
         if (!data) return;
+
+        // 共通の基本情報を設定
         $('#departure-point').val(data.general?.departure || '');
         $('#members').val(data.general?.members || '');
-        $('#theme').val(data.general?.theme || '');
         $('#priority').val(data.general?.priority || '');
 
-        $('#days-container').empty();
-        dayCount = 0;
-        if(data.days && data.days.length > 0) {
-            data.days.forEach(dayData => addDay(dayData));
+        if (data.isSuggestionMode) {
+            // AI提案モードのフォーム項目を設定
+            $('#ai-suggestion-mode').prop('checked', true).trigger('change'); // UIの表示切替もトリガー
+            $('#arrival-point').val(data.suggestion?.arrivalPoint || '');
+            $('#trip-start-date').val(data.suggestion?.startDate || '');
+            $('#trip-end-date').val(data.suggestion?.endDate || '');
+            $('#trip-keywords').val(data.suggestion?.keywords || '');
+            $('#trip-remarks').val(data.suggestion?.remarks || '');
+            // 通常モードのテーマはクリア
+            $('#theme').val('');
         } else {
-            addDay();
+            // 通常モードのフォーム項目を設定
+            $('#ai-suggestion-mode').prop('checked', false).trigger('change');
+            $('#theme').val(data.general?.theme || '');
+
+            $('#days-container').empty();
+            dayCount = 0;
+            if(data.days && data.days.length > 0) {
+                data.days.forEach(dayData => addDay(dayData));
+            } else {
+                addDay(); // データがない場合は空の1日を追加
+            }
         }
     }
 
@@ -107,20 +124,37 @@ const UI = (function() {
         $('#save-status').text(message).fadeIn().delay(3000).fadeOut();
     }
 
+    function showImportStatusMessage(message) {
+        $('#import-status').text(message).fadeIn().delay(3000).fadeOut();
+    }
+
+    function showMarkdownStatusMessage(message) {
+        $('#markdown-status').text(message).fadeIn().delay(3000).fadeOut();
+    }
+
+    function displayLoadedMarkdown(markdown) {
+        const $outputTextarea = $('#output-markdown');
+        $outputTextarea.val(markdown);
+        $('#output-area').slideDown();
+        $outputTextarea.css('height', 'auto').css('height', $outputTextarea.prop('scrollHeight') + 'px');
+        showMarkdownStatusMessage('以前生成したプロンプトを復元しました。');
+    }
+
     return {
         initialize: function(prefs) {
             prefectures = prefs;
             initializePrefectureModal();
-            const loaded = DATA_MANAGER.autoLoad();
-            if (!loaded) {
-                addDay();
-            }
+            // ★起動時の自動読み込み処理はmain.jsに集約されたため、ここでは単純に初期の1日を追加するだけにする
+            addDay();
         },
         addDay: addDay,
         addPlace: addPlace,
         updateEventButtonState: updateEventButtonState,
         populateFormFromData: populateFormFromData,
         showStatusMessage: showStatusMessage,
+        showImportStatusMessage: showImportStatusMessage,
+        showMarkdownStatusMessage: showMarkdownStatusMessage,
+        displayLoadedMarkdown: displayLoadedMarkdown,
         getPrefectures: () => prefectures
     };
 })();

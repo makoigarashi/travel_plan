@@ -29,6 +29,7 @@
         <div class="text-center mb-8">
             <h1 class="text-3xl font-bold text-blue-600 mb-1">旅行プラン・プロンプトジェネレーター</h1>
             <p class="text-sm text-gray-500 italic" id="version-info"></p>
+            <p id="save-status" class="text-green-600 font-semibold mt-2 h-6"></p> <!-- メッセージ表示領域 -->
         </div>
 
         <button type="button" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg mb-6 transition-colors toggle-import-btn">以前のプロンプトを読み込む</button>
@@ -37,6 +38,7 @@
             <label for="import-prompt" class="block mb-2 font-semibold">ここに以前生成したプロンプトを貼り付けてください</label>
             <textarea id="import-prompt" class="w-full p-2 border border-gray-300 rounded-md min-h-[150px] bg-gray-50 mb-4" placeholder="「# 旅行プランの作成依頼」から始まるテキストを貼り付けます..."></textarea>
             <button type="button" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors import-button">フォームに反映する</button>
+            <p id="import-status" class="text-sm text-gray-500 mt-3 text-center"></p>
         </fieldset>
 
         <fieldset class="border border-gray-300 rounded-md p-6 mb-6">
@@ -106,6 +108,7 @@
         <div id="output-area" style="display:none;">
             <h2 class="text-2xl font-bold text-blue-600 text-center mt-0 pb-2 border-b-2 border-blue-600">生成されたプロンプト</h2>
             <textarea id="output-markdown" class="w-full p-2 border border-gray-300 rounded-md min-h-[300px] bg-gray-50 mt-6" readonly></textarea>
+            <p id="markdown-status" class="text-sm text-gray-500 mt-2 text-center"></p>
             <button type="button" class="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors copy-button">クリップボードにコピー</button>
         </div>
     </div>
@@ -183,24 +186,24 @@
 あなたは非常に優秀で、柔軟な思考ができる旅行プランナーです。以下の条件と希望をすべて満たす、最高の旅行プランを提案してください。
 
 ### 旅行全体の基本情報
-*   **出発地**：{{general.departure}}
-*   **メンバー構成・体力レベル**：{{general.members}}
-*   **旅のテーマ・雰囲気**：{{general.theme}}
-*   **最優先事項**：{{general.priority}}
+*   **出発地**: {{general.departure}}
+*   **メンバー構成・体力レベル**: {{general.members}}
+*   **旅のテーマ・雰囲気**: {{general.theme}}
+*   **最優先事項**: {{general.priority}}
 
 {{#each days}}
 ### {{dayNumber}}日目（{{date}}・{{dayOfWeek}}）
-*   **主な活動エリア**：{{area}}
-*   **宿泊先／最終目的地**：{{accommodation}}
-*   **行きたい場所**：
+*   **主な活動エリア**: {{area}}
+*   **宿泊先／最終目的地**: {{accommodation}}
+*   **行きたい場所**:
 {{#each places}}
     *   {{#if url}}[{{name}}]({{url}}){{else}}{{name}}{{/if}}
 {{/each}}
-*   **やりたいこと・食べたいもの**：
+*   **やりたいこと・食べたいもの**:
 {{#each doEat}}
     *   {{this}}
 {{/each}}
-*   **交通パス・時間指定など**：
+*   **交通パス・時間指定など**:
 {{#each notes}}
     *   {{this}}
 {{/each}}
