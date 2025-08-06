@@ -59,6 +59,21 @@ const MARKDOWN_PARSER = (function() {
         const isSuggestionMode = firstHeadingToken && firstHeadingToken.depth === 1 && firstHeadingToken.text === '★★★ 行先提案モード ★★★';
         const data = { general: {}, days: [], suggestion: {}, isSuggestionMode: isSuggestionMode };
 
+        // 共通の基本情報パース処理
+        function parseGeneralInfo(items, targetData) {
+            items.forEach(item => {
+                const parsedItem = parseListItem(item);
+                if (parsedItem.isKeyValue) {
+                    const key = parsedItem.key;
+                    const value = parsedItem.value;
+                    if (key.includes('出発地')) targetData.departure = value;
+                    else if (key.includes('メンバー構成')) targetData.members = value;
+                    else if (key.includes('旅のテーマ')) targetData.theme = value;
+                    else if (key.includes('最優先事項')) targetData.priority = value;
+                }
+            });
+        }
+
         if (isSuggestionMode) {
             // AI提案モード専用の解析ロジック
             let currentSection = '';
@@ -67,13 +82,15 @@ const MARKDOWN_PARSER = (function() {
                     currentSection = 'suggestion';
                 }
                 if (token.type === 'list' && currentSection === 'suggestion') {
+                    // 基本情報をパース
+                    parseGeneralInfo(token.items, data.general);
+
                     token.items.forEach(item => {
                         const parsedItem = parseListItem(item);
                         if (parsedItem.isKeyValue) {
                             const key = parsedItem.key;
                             const value = parsedItem.value;
-                            if (key.includes('出発地')) data.general.departure = value;
-                            else if (key.includes('到着空港・駅')) data.suggestion.arrivalPoint = value;
+                            if (key.includes('到着空港・駅')) data.suggestion.arrivalPoint = value;
                             else if (key.includes('旅行期間')) {
                                 // 「日帰り (YYYY-MM-DD)」形式の解析
                                 let dateMatch = value.match(/日帰り \((\d{4}-\d{2}-\d{2})\)/);
@@ -89,9 +106,6 @@ const MARKDOWN_PARSER = (function() {
                                     }
                                 }
                             }
-                            else if (key.includes('メンバー構成')) data.general.members = value;
-                            else if (key.includes('最優先事項')) data.general.priority = value;
-                            else if (key.includes('旅のテーマ')) data.general.theme = value;
                             else if (key.includes('備考・その他の要望')) {
                                 let remarks = [];
                                 if(item.tokens.length > 1 && item.tokens[1] && item.tokens[1].type === 'list') {
@@ -115,7 +129,14 @@ const MARKDOWN_PARSER = (function() {
                 if (token.type === 'heading' && token.depth === 3) {
                     const title = token.text;
                     currentListKey = '';
-                    if (title.includes('旅行全体の基本情報')) currentSection = 'general';
+                    if (title.includes('旅行全体の基本情報')) {
+                        currentSection = 'general';
+                        // 基本情報をパース
+                        const generalListToken = tokens[tokens.indexOf(token) + 1]; // 次のトークンがリストであることを期待
+                        if (generalListToken && generalListToken.type === 'list') {
+                            parseGeneralInfo(generalListToken.items, data.general);
+                        }
+                    }
                     else if (title.includes('日目')) {
                         currentSection = 'day';
                         currentDay = { places: [], doEat: [], notes: [] };
@@ -134,12 +155,10 @@ const MARKDOWN_PARSER = (function() {
                         const parsedItem = parseListItem(item);
                         if (parsedItem.isKeyValue) {
                             currentListKey = parsedItem.key;
-                            if (currentSection === 'general') {
-                                if (parsedItem.key.includes('出発地')) data.general.departure = parsedItem.value;
-                                else if (parsedItem.key.includes('メンバー構成')) data.general.members = parsedItem.value;
-                                else if (parsedItem.key.includes('旅のテーマ')) data.general.theme = parsedItem.value;
-                                else if (parsedItem.key.includes('最優先事項')) data.general.priority = parsedItem.value;
-                            } else if (currentDay) {
+                            // 基本情報は共通関数でパース済みのためスキップ
+                            if (currentSection === 'general') return;
+
+                            if (currentDay) {
                                 if (parsedItem.key.includes('主な活動エリア')) {
                                     const areaParts = parsedItem.value.match(/(.+?)\s*[(\(](.+?)[)\)]/);
                                     currentDay.area = areaParts ? areaParts[1].trim() : parsedItem.value;
