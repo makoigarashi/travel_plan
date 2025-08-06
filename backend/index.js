@@ -1,3 +1,8 @@
+/**
+ * @file APIプロキシ用のExpressサーバーです。
+ * @author Gemini
+ */
+
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
@@ -31,14 +36,20 @@ app.use(cors());
 // -----------------------------------------------
 
 /**
- * 都道府県リストを取得するハンドラ
+ * 都道府県リスト取得リクエストを処理します。
+ * @param {object} req - Expressリクエストオブジェクト。
+ * @param {object} res - Expressレスポンスオブジェクト。
+ * @returns {object} 都道府県リストを含むJSONレスポンス。
  */
 async function handleGetPrefectures(req, res) {
     return res.status(200).json(prefectures);
 }
 
 /**
- * 指定された都道府県の市区町村リストを取得するハンドラ
+ * 指定された都道府県の市区町村リスト取得リクエストを処理します。
+ * @param {object} req - Expressリクエストオブジェクト。
+ * @param {object} res - Expressレスポンスオブジェクト。
+ * @returns {object} 市区町村リストを含むJSONレスポンス。
  */
 async function handleGetCities(req, res) {
     const prefCode = req.query.prefCode;
@@ -110,6 +121,10 @@ app.get('/', async (req, res) => {
 // -----------------------------------------------
 // サーバー起動
 // -----------------------------------------------
+/**
+ * Expressサーバーを起動します。
+ * MLIT_API_KEYが設定されていない場合はプロセスを終了します。
+ */
 function startServer() {
     if (!MLIT_API_KEY) {
         console.error('FATAL ERROR: MLIT_API_KEY environment variable is not set. Server will not start.');

@@ -1,50 +1,47 @@
 /**
- * @file 旅行プランジェネレーターのデータ操作を管理します。
+ * @file Markdownの解析ロジックを管理します。
  * @author Gemini
  */
 
 // =============================================
-// データモデルと永続化レイヤー (data_manager.js)
-// 役割：フォームデータの取得・整形、Markdownの解析、localStorageへの保存・読込・削除を担当します。
+// Markdown解析モジュール (markdown_parser.js)
+// 役割：Markdown文字列を解析し、アプリケーションで利用可能なJavaScriptオブジェクトに変換します。
 // =============================================
-
-const DATA_MANAGER = (function() {
-    const MARKDOWN_STORAGE_KEY = 'travelPromptMarkdownOutput';
+const MARKDOWN_PARSER = (function() {
 
     /**
-     * 現在のフォーム入力内容を取得します。
-     * @returns {object} 現在のフォームデータを格納したオブジェクト。
+     * markedのトークンからテキストを抽出します。リンクは特殊な形式で保持します。
+     * @param {Array} tokens - markedのトークン配列。
+     * @returns {string} 抽出されたテキスト。
      */
-    function getCurrentFormData() {
-        const data = { general: {}, days: [] };
-        data.general.departure = $('#departure-point').val();
-        data.general.members = $('#members').val();
-        data.general.theme = $('#theme').val() || $('#theme').attr('placeholder');
-        data.general.priority = $('#priority').val() || $('#priority').attr('placeholder');
+    function extractText(tokens) {
+         return tokens.map(t => {
+            if (t.type === 'link') {
+                return `__LINK__${t.text}__SEP__${t.href}__ENDLINK__`;
+            }
+            return t.tokens ? extractText(t.tokens) : t.text;
+        }).join('');
+    }
 
-        $('.day-plan').each(function(){
-            const $dayDiv = $(this);
-            const prefCode = $dayDiv.find('.open-prefecture-modal-btn').data('pref-code');
-            const prefName = UI.getPrefectures()[prefCode] || '';
-
-            const dayData = {
-                date: $dayDiv.find('.travel-date').val(),
-                prefCode: prefCode, // prefCodeも保存
-                area: prefName,
-                city: $dayDiv.find('.city-select').val(),
-                accommodation: $dayDiv.find('.accommodation').val(),
-                places: [],
-                doEat: $dayDiv.find('.must-do-eat').val().trim().split('\n').filter(Boolean),
-                notes: $dayDiv.find('.day-specific-notes').val().trim().split('\n').filter(Boolean)
-            };
-            $dayDiv.find('.places-container .dynamic-input-group').each(function(){
-                const name = $(this).find('.place-name').val().trim();
-                const url = $(this).find('.place-url').val().trim();
-                if (name) dayData.places.push({ name: name, url: url });
-            });
-            data.days.push(dayData);
-        });
-        return data;
+    /**
+     * リストアイテムのトークンを解析し、キーと値、または単なるテキストを返します。
+     * @param {object} item - markedのリストアイテムトークン。
+     * @returns {object} 解析結果。
+     */
+    function parseListItem(item) {
+        if (!item.tokens) return { isKeyValue: false };
+        let key = '', value = '', isKeyValue = false;
+        if (item.tokens[0] && item.tokens[0].tokens) {
+            const strongToken = item.tokens[0].tokens.find(t => t.type === 'strong');
+            if (strongToken) {
+                key = extractText(strongToken.tokens);
+                const keyIndex = item.tokens[0].tokens.indexOf(strongToken);
+                const valueTokens = item.tokens[0].tokens.slice(keyIndex + 1);
+                value = extractText(valueTokens).replace(/^:\s*/, '').trim();
+                isKeyValue = true;
+            }
+        }
+        return { isKeyValue, key, value, rawText: extractText(item.tokens) };
     }
 
     /**
@@ -52,37 +49,15 @@ const DATA_MANAGER = (function() {
      * @param {string} text - 解析対象のMarkdownテキスト。
      * @returns {object|null} 解析されたデータオブジェクト。入力が空の場合はnull。
      */
-    function parseMarkdownFromText(text) {
+    function parse(text) {
         if (!text || !text.trim()) return null;
 
-        const isSuggestionMode = text.startsWith('# ★★★ 行先提案モード ★★★');
-        const data = { general: {}, days: [], suggestion: {}, isSuggestionMode: isSuggestionMode };
-        const tokens = marked.lexer(text);
+        text = text.trim(); // 先頭と末尾の空白文字を削除
 
-        // ヘルパー関数
-        function extractText(tokens) {
-             return tokens.map(t => {
-                if (t.type === 'link') {
-                    return `__LINK__${t.text}__SEP__${t.href}__ENDLINK__`;
-                }
-                return t.tokens ? extractText(t.tokens) : t.text;
-            }).join('');
-        }
-        function parseListItem(item) {
-            if (!item.tokens) return { isKeyValue: false };
-            let key = '', value = '', isKeyValue = false;
-            if (item.tokens[0] && item.tokens[0].tokens) {
-                const strongToken = item.tokens[0].tokens.find(t => t.type === 'strong');
-                if (strongToken) {
-                    key = extractText(strongToken.tokens);
-                    const keyIndex = item.tokens[0].tokens.indexOf(strongToken);
-                    const valueTokens = item.tokens[0].tokens.slice(keyIndex + 1);
-                    value = extractText(valueTokens).replace(/^:\s*/, '').trim();
-                    isKeyValue = true;
-                }
-            }
-            return { isKeyValue, key, value, rawText: extractText(item.tokens) };
-        }
+        const tokens = marked.lexer(text);
+        const firstHeadingToken = tokens.find(token => token.type === 'heading');
+        const isSuggestionMode = firstHeadingToken && firstHeadingToken.depth === 1 && firstHeadingToken.text === '★★★ 行先提案モード ★★★';
+        const data = { general: {}, days: [], suggestion: {}, isSuggestionMode: isSuggestionMode };
 
         if (isSuggestionMode) {
             // AI提案モード専用の解析ロジック
@@ -100,15 +75,23 @@ const DATA_MANAGER = (function() {
                             if (key.includes('出発地')) data.general.departure = value;
                             else if (key.includes('到着空港・駅')) data.suggestion.arrivalPoint = value;
                             else if (key.includes('旅行期間')) {
-                                const dateMatch = value.match(/(\d{4}-\d{2}-\d{2})\s*～\s*(\d{4}-\d{2}-\d{2})/);
+                                // 「日帰り (YYYY-MM-DD)」形式の解析
+                                let dateMatch = value.match(/日帰り \((\d{4}-\d{2}-\d{2})\)/);
                                 if (dateMatch) {
                                     data.suggestion.startDate = dateMatch[1];
-                                    data.suggestion.endDate = dateMatch[2];
+                                    data.suggestion.endDate = dateMatch[1]; // 日帰りの場合、開始日と終了日は同じ
+                                } else {
+                                    // 「X泊Y日 (YYYY-MM-DD ～ YYYY-MM-DD)」形式の解析
+                                    dateMatch = value.match(/(\d{4}-\d{2}-\d{2})\s*～\s*(\d{4}-\d{2}-\d{2})/);
+                                    if (dateMatch) {
+                                        data.suggestion.startDate = dateMatch[1];
+                                        data.suggestion.endDate = dateMatch[2];
+                                    }
                                 }
                             }
                             else if (key.includes('メンバー構成')) data.general.members = value;
-                            else if (key.includes('旅のキーワード')) data.suggestion.keywords = value;
                             else if (key.includes('最優先事項')) data.general.priority = value;
+                            else if (key.includes('旅のテーマ')) data.general.theme = value;
                             else if (key.includes('備考・その他の要望')) {
                                 let remarks = [];
                                 if(item.tokens.length > 1 && item.tokens[1] && item.tokens[1].type === 'list') {
@@ -116,7 +99,7 @@ const DATA_MANAGER = (function() {
                                         remarks.push(extractText(subItem.tokens).trim());
                                     });
                                 }
-                                data.suggestion.remarks = remarks.join('\n');
+                                data.suggestion.remarks = remarks;
                             }
                         }
                     });
@@ -158,7 +141,7 @@ const DATA_MANAGER = (function() {
                                 else if (parsedItem.key.includes('最優先事項')) data.general.priority = parsedItem.value;
                             } else if (currentDay) {
                                 if (parsedItem.key.includes('主な活動エリア')) {
-                                    const areaParts = parsedItem.value.match(/(.+?)\s*[\(（](.+?)[\)）]/);
+                                    const areaParts = parsedItem.value.match(/(.+?)\s*[(\(](.+?)[)\)]/);
                                     currentDay.area = areaParts ? areaParts[1].trim() : parsedItem.value;
                                     currentDay.city = areaParts ? areaParts[2].trim() : '';
                                 } else if (parsedItem.key.includes('宿泊先')) {
@@ -192,37 +175,8 @@ const DATA_MANAGER = (function() {
         return data;
     }
 
-    /**
-     * Markdownテキストをローカルストレージに保存します。
-     * @param {string} markdown - 保存するMarkdownテキスト。
-     */
-    function saveMarkdown(markdown) {
-        try {
-            localStorage.setItem(MARKDOWN_STORAGE_KEY, markdown);
-        } catch (e) {
-            console.error('Markdownの保存に失敗しました。', e);
-        }
-    }
-
-    /**
-     * ローカルストレージからMarkdownテキストを読み込みます。
-     * @returns {string|null} 読み込まれたMarkdownテキスト。存在しない場合はnull。
-     */
-    function loadMarkdown() {
-        return localStorage.getItem(MARKDOWN_STORAGE_KEY);
-    }
-
-    /**
-     * ローカルストレージからMarkdownテキストを削除します。
-     */
-    function deleteMarkdown() {
-        localStorage.removeItem(MARKDOWN_STORAGE_KEY);
-    }
-
+    // 公開する関数を返す
     return {
-        getCurrentFormData: getCurrentFormData,
-        saveMarkdown: saveMarkdown,
-        loadMarkdown: loadMarkdown,
-        deleteMarkdown: deleteMarkdown
+        parse: parse
     };
 })();
