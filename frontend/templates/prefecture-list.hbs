@@ -1,0 +1,18 @@
+
+        {{#each regions}}
+        <div class="mb-6">
+            <h3 class="text-xl font-bold border-b-2 border-blue-500 pb-2 mb-3">{{@key}}</h3>
+            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                {{#each this}}
+                <button 
+                    type="button" 
+                    class="prefecture-select-btn p-2 border rounded-md text-center hover:bg-blue-100 hover:border-blue-500 transition-colors"
+                    data-pref-code="{{this.code}}" 
+                    data-pref-name="{{this.name}}">
+                    {{this.name}}
+                </button>
+                {{/each}}
+            </div>
+        </div>
+        {{/each}}
+    

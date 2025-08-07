@@ -1,0 +1,18 @@
+
+        {{#each categories}}
+        <div class="mb-6">
+            <h3 class="text-lg font-bold border-b-2 border-green-500 pb-2 mb-3">{{@key}}</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {{#each this}}
+                <button 
+                    type="button" 
+                    class="city-select-btn p-2 border rounded-md text-center hover:bg-green-100 hover:border-green-500 transition-colors text-sm"
+                    data-city-name="{{this.name}}"
+                    title="{{this.katakana}}">
+                    {{this.name}}
+                </button>
+                {{/each}}
+            </div>
+        </div>
+        {{/each}}
+    
