@@ -113,6 +113,22 @@
     </div>
 
     <!-- Modals and Templates -->
+    <!-- 市町村選択モーダル -->
+    <div class="modal micromodal-slide" id="modal-city" aria-hidden="true">
+        <div class="modal__overlay" tabindex="-1" data-micromodal-close>
+            <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-city-title">
+                <header class="modal__header">
+                    <h2 class="modal__title" id="modal-city-title">市町村を選択</h2>
+                    <button class="modal__close" aria-label="閉じる" data-micromodal-close></button>
+                </header>
+                <main class="modal__content" id="modal-city-content">
+                    <!-- 市町村一覧がここに動的に生成されます -->
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals and Templates -->
     <div class="modal micromodal-slide" id="modal-prefecture" aria-hidden="true">
         <div class="modal__overlay" tabindex="-1" data-micromodal-close>
             <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-prefecture-title">
@@ -124,6 +140,26 @@
             </div>
         </div>
     </div>
+
+    <!-- 市町村選択用テンプレート（50音順カテゴリ分け） -->
+    <script id="city-list-template" type="text/x-handlebars-template">
+        {{#each categories}}
+        <div class="mb-6">
+            <h3 class="text-lg font-bold border-b-2 border-green-500 pb-2 mb-3">{{@key}}</h3>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                {{#each this}}
+                <button 
+                    type="button" 
+                    class="city-select-btn p-2 border rounded-md text-center hover:bg-green-100 hover:border-green-500 transition-colors text-sm"
+                    data-city-name="{{this.name}}"
+                    title="{{this.katakana}}">
+                    {{this.name}}
+                </button>
+                {{/each}}
+            </div>
+        </div>
+        {{/each}}
+    </script>
 
     <script id="prefecture-list-template" type="text/x-handlebars-template">
         {{#each regions}}
@@ -156,7 +192,7 @@
             <label class="block mb-2 font-semibold">主な活動エリア</label>
             <div class="flex gap-4 mb-4">
                 <button type="button" class="open-prefecture-modal-btn w-1/2 p-2 border border-gray-300 rounded-md text-left text-gray-500" data-pref-code="">都道府県を選択</button>
-                <select class="city-select w-1/2 p-2 border border-gray-300 rounded-md" disabled><option value="">市町村</option></select>
+                <button type="button" class="open-city-modal-btn w-1/2 p-2 border border-gray-300 rounded-md text-left text-gray-500" data-city-name="" disabled>市町村を選択</button>
             </div>
             <label class="block mb-2 font-semibold">宿泊先／最終目的地</label>
             <input type="text" class="accommodation w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：ホテル、空港など">
