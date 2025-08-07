@@ -11,6 +11,7 @@
 $(document).ready(function(){
     const API_ENDPOINT = AppConfig.API_ENDPOINT;
     let currentPrefButton = null;
+    let currentCityButton = null;
 
     /**
      * アプリケーションを初期化します。
@@ -75,6 +76,16 @@ $(document).ready(function(){
                 currentPrefButton = $(this);
                 MicroModal.show('modal-prefecture');
             })
+            .on('click', '.open-city-modal-btn', function() {
+                if (!$(this).prop('disabled')) {
+                    currentCityButton = $(this);
+                    const $dayDiv = $(this).closest('.day-plan');
+                    const prefCode = $dayDiv.find('.open-prefecture-modal-btn').data('pref-code');
+                    if (prefCode) {
+                        loadCityModal(prefCode);
+                    }
+                }
+            })
             .on('click', '.remove-day-btn', function(){
                  const $dayPlan = $(this).closest('.day-plan');
                  if ($('.day-plan').length > 1) {
@@ -92,9 +103,9 @@ $(document).ready(function(){
                 UI.updateEventButtonState($(this).closest('.day-plan'));
             })
             .on('click', '.search-events-btn', handleSearchEvents)
-            .on('city-select-init', '.open-prefecture-modal-btn', handleCitySelectInit);
 
         $('#modal-prefecture-content').on('click', '.prefecture-select-btn', handlePrefectureSelect);
+        $('#modal-city-content').on('click', '.city-select-btn', handleCitySelect);
 
         $('#ai-suggestion-mode').on('change', handleSuggestionModeChange);
 
@@ -103,6 +114,13 @@ $(document).ready(function(){
         $('.generate-btn').on('click', handleGenerateMarkdown);
 
         $('.copy-button').on('click', handleCopyMarkdown);
+        
+        // テストボタンのイベントハンドラー
+        $('#run-tests-btn').on('click', function() {
+            if (typeof TEST_RUNNER !== 'undefined') {
+                TEST_RUNNER.runAllTests();
+            }
+        });
     }
 
     /**
@@ -128,24 +146,21 @@ $(document).ready(function(){
     }
 
     /**
-     *市区町村選択ドロップダウンの初期化を処理します。
-     * @param {Event} event - イベントオブジェクト。
+     * 市町村モーダルを読み込んで表示します。
      * @param {string} prefCode - 都道府県コード。
-     * @param {string} cityToSelect - デフォルトで選択される市区町村。
      */
-    function handleCitySelectInit(event, prefCode, cityToSelect) {
-        const $prefButton = $(this);
-        const $citySelect = $prefButton.siblings('.city-select');
-
-        $citySelect.html('<option value="">読み込み中...</option>').prop('disabled', true);
+    function loadCityModal(prefCode) {
+        $('#modal-city-content').html('<div class="text-center p-4">読み込み中...</div>');
+        MicroModal.show('modal-city');
+        
         $.getJSON(`${API_ENDPOINT}?api=cities&prefCode=${prefCode}`, function(data) {
-            $citySelect.html('<option value="">市町村を選択</option>').prop('disabled', false);
             if (data && Array.isArray(data)) {
-                data.forEach(cityName => { $citySelect.append(`<option value="${cityName}">${cityName}</option>`); });
-                if (cityToSelect) { $citySelect.val(cityToSelect); }
+                UI.initializeCityModal(data);
+            } else {
+                $('#modal-city-content').html('<div class="text-center p-4 text-red-500">データの取得に失敗しました</div>');
             }
         }).fail(function() {
-            $citySelect.html('<option value="">取得失敗</option>').prop('disabled', true);
+            $('#modal-city-content').html('<div class="text-center p-4 text-red-500">データの取得に失敗しました</div>');
         });
     }
 
@@ -158,9 +173,25 @@ $(document).ready(function(){
             const prefName = $(this).data('pref-name');
             currentPrefButton.text(prefName).data('pref-code', prefCode).removeClass('text-gray-500');
             const $dayDiv = currentPrefButton.closest('.day-plan');
+            
+            // 市町村ボタンを有効化して初期化
+            const $cityButton = $dayDiv.find('.open-city-modal-btn');
+            $cityButton.prop('disabled', false).removeClass('text-gray-500').text('市町村を選択').data('city-name', '');
+            
             UI.updateEventButtonState($dayDiv);
-            currentPrefButton.trigger('city-select-init', [prefCode, null]);
             MicroModal.close('modal-prefecture');
+        }
+    }
+    
+    /**
+     * モーダルからの市町村の選択を処理します。
+     */
+    function handleCitySelect() {
+        if (currentCityButton) {
+            const cityName = $(this).data('city-name');
+            const katakanaReading = $(this).attr('title') || '';
+            currentCityButton.text(cityName).data('city-name', cityName).attr('data-katakana', katakanaReading);
+            MicroModal.close('modal-city');
         }
     }
 

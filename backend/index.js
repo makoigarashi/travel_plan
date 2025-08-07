@@ -61,6 +61,7 @@ async function handleGetCities(req, res) {
         query {
           municipalities(prefCodes: [${parseInt(prefCode, 10)}]) {
             name
+            katakana
           }
         }
     `;
@@ -78,7 +79,10 @@ async function handleGetCities(req, res) {
     });
 
     if (response.data && response.data.data && response.data.data.municipalities && Array.isArray(response.data.data.municipalities)) {
-        const cities = response.data.data.municipalities.map(item => item.name);
+        const cities = response.data.data.municipalities.map(item => ({
+            name: item.name,
+            katakana: item.katakana || ''
+        }));
         return res.status(200).json(cities);
     } else {
         if(response.data && response.data.errors) {
