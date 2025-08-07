@@ -8,13 +8,16 @@
 // 役割：指定されたデータからMarkdown文字列を生成することに特化します。
 // =============================================
 const MARKDOWN_GENERATOR = (function() {
+    let templates = {}; // ここでテンプレートを保持
 
-    // 各テンプレートをコンパイル
-    const markdownTemplate = Handlebars.compile($('#markdown-template').html());
-    const suggestionMarkdownTemplate = Handlebars.compile($('#suggestion-markdown-template').html());
-    const footerTemplateHtml = $('#markdown-template').html();
-    const footerStartIndex = footerTemplateHtml.indexOf('### AIへの特別指示');
-    const footerTemplate = Handlebars.compile(footerTemplateHtml.substring(footerStartIndex));
+    /**
+     * モジュールを初期化し、必要なテンプレートを設定します。
+     * @param {object} compiledTemplates - UIモジュールから渡されるコンパイル済みテンプレート。
+     */
+    function initialize(compiledTemplates) {
+        templates.markdown = compiledTemplates.markdown;
+        templates.suggestionMarkdown = compiledTemplates.suggestionMarkdown;
+    }
 
     /**
      * AI提案モードのマークダウンを生成します。
@@ -22,7 +25,11 @@ const MARKDOWN_GENERATOR = (function() {
      * @returns {string} 生成されたマークダウン。
      */
     function generateSuggestionMarkdown(data) {
-        return suggestionMarkdownTemplate(data);
+        if (!templates.suggestionMarkdown) {
+            console.error('Suggestion-Markdown template is not initialized.');
+            return '';
+        }
+        return templates.suggestionMarkdown(data);
     }
 
     /**
@@ -31,11 +38,16 @@ const MARKDOWN_GENERATOR = (function() {
      * @returns {string} 生成されたマークダウン。
      */
     function generateStandardMarkdown(data) {
-        return markdownTemplate(data);
+        if (!templates.markdown) {
+            console.error('Markdown template is not initialized.');
+            return '';
+        }
+        return templates.markdown(data);
     }
 
     // 公開する関数を返す
     return {
+        initialize: initialize,
         generateSuggestionMarkdown: generateSuggestionMarkdown,
         generateStandardMarkdown: generateStandardMarkdown
     };
