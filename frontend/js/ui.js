@@ -14,6 +14,7 @@ const UI = (function() {
     const dayTemplate = Handlebars.compile($('#day-plan-template').html());
     const placeTemplate = Handlebars.compile($('#place-input-template').html());
     const prefectureListTemplate = Handlebars.compile($('#prefecture-list-template').html());
+    const cityListTemplate = Handlebars.compile($('#city-list-template').html());
 
     /**
      * 新しい日付プランのセクションをUIに追加します。
@@ -31,8 +32,12 @@ const UI = (function() {
             if (prefName) {
                 const $prefButton = $newDay.find('.open-prefecture-modal-btn');
                 $prefButton.text(prefName).data('pref-code', data.prefCode).removeClass('text-gray-500');
-                // 市区町村も復元
-                $prefButton.trigger('city-select-init', [data.prefCode, data.city]);
+                // 市町村ボタンを有効化して復元
+                const $cityButton = $newDay.find('.open-city-modal-btn');
+                $cityButton.prop('disabled', false).removeClass('text-gray-500');
+                if (data.city) {
+                    $cityButton.text(data.city).data('city-name', data.city);
+                }
             }
         } else if (data.area) { // 旧データ形式（area名のみ）への後方互換性
              const prefEntry = Object.entries(prefectures).find(([code, name]) => name === data.area);
@@ -41,7 +46,12 @@ const UI = (function() {
                 const prefName = prefEntry[1];
                 const $prefButton = $newDay.find('.open-prefecture-modal-btn');
                 $prefButton.text(prefName).data('pref-code', prefCode).removeClass('text-gray-500');
-                $prefButton.trigger('city-select-init', [prefCode, data.city]);
+                // 市町村ボタンを有効化して復元
+                const $cityButton = $newDay.find('.open-city-modal-btn');
+                $cityButton.prop('disabled', false).removeClass('text-gray-500');
+                if (data.city) {
+                    $cityButton.text(data.city).data('city-name', data.city);
+                }
              }
         }
 
@@ -85,6 +95,96 @@ const UI = (function() {
         else {
             $button.prop('disabled', true);
         }
+    }
+
+    /**
+     * 文字列の50音順ソート用コンパレータ関数。
+     * @param {string} a - 比較する文字列A。
+     * @param {string} b - 比較する文字列B。
+     * @returns {number} ソート結果。
+     */
+    function compareKana(a, b) {
+        return a.localeCompare(b, 'ja', { sensitivity: 'base' });
+    }
+
+    /**
+     * 市町村データをカタカナ読みによる50音順カテゴリ（あ行・か行など）で分類します。
+     * @param {Array} cities - 市町村データの配列（{name, katakana}オブジェクト）。
+     * @returns {object} カテゴリ別に分類されたオブジェクト。
+     */
+    function categorizeCitiesByKana(cities) {
+        const categories = {
+            'あ行': [],
+            'か行': [],
+            'さ行': [],
+            'た行': [],
+            'な行': [],
+            'は行': [],
+            'ま行': [],
+            'や行': [],
+            'ら行': [],
+            'わ行': [],
+            'その他': []
+        };
+
+        cities.forEach(cityData => {
+            // カタカナ読みがあればそれを使用、なければ市町村名で判定
+            const readingText = cityData.katakana || cityData.name;
+            const firstChar = readingText.charAt(0);
+            
+            if (/[あ-おア-オ]/.test(firstChar)) {
+                categories['あ行'].push(cityData);
+            } else if (/[か-こカ-コが-ごガ-ゴ]/.test(firstChar)) {
+                categories['か行'].push(cityData);
+            } else if (/[さ-そサ-ソざ-ぞザ-ゾ]/.test(firstChar)) {
+                categories['さ行'].push(cityData);
+            } else if (/[た-とタ-トだ-どダ-ド]/.test(firstChar)) {
+                categories['た行'].push(cityData);
+            } else if (/[な-のナ-ノ]/.test(firstChar)) {
+                categories['な行'].push(cityData);
+            } else if (/[は-ほハ-ホば-ぼバ-ボぱ-ぽパ-ポ]/.test(firstChar)) {
+                categories['は行'].push(cityData);
+            } else if (/[ま-もマ-モ]/.test(firstChar)) {
+                categories['ま行'].push(cityData);
+            } else if (/[やゆよヤユヨ]/.test(firstChar)) {
+                categories['や行'].push(cityData);
+            } else if (/[ら-ろラ-ロ]/.test(firstChar)) {
+                categories['ら行'].push(cityData);
+            } else if (/[わをんワヲン]/.test(firstChar)) {
+                categories['わ行'].push(cityData);
+            } else {
+                categories['その他'].push(cityData);
+            }
+        });
+
+        // 各カテゴリ内でカタカナ読みでソート
+        Object.keys(categories).forEach(key => {
+            categories[key].sort((a, b) => {
+                const aReading = a.katakana || a.name;
+                const bReading = b.katakana || b.name;
+                return compareKana(aReading, bReading);
+            });
+        });
+
+        // 空のカテゴリを削除
+        Object.keys(categories).forEach(key => {
+            if (categories[key].length === 0) {
+                delete categories[key];
+            }
+        });
+
+        return categories;
+    }
+
+    /**
+     * 市町村選択モーダルをデータで初期化します。
+     * @param {Array} cities - 市町村配列。
+     */
+    function initializeCityModal(cities) {
+        // 50音順カテゴリ別に分類
+        const categorizedCities = categorizeCitiesByKana(cities);
+        const modalContentHtml = cityListTemplate({ categories: categorizedCities });
+        $('#modal-city-content').html(modalContentHtml);
     }
 
     /**
@@ -202,6 +302,7 @@ const UI = (function() {
         showImportStatusMessage: showImportStatusMessage,
         showMarkdownStatusMessage: showMarkdownStatusMessage,
         displayLoadedMarkdown: displayLoadedMarkdown,
+        initializeCityModal: initializeCityModal,
         /**
          * 都道府県オブジェクトを取得します。
          * @returns {object} 都道府県オブジェクト。

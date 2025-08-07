@@ -27,11 +27,12 @@ const DATA_MANAGER = (function() {
             const prefCode = $dayDiv.find('.open-prefecture-modal-btn').data('pref-code');
             const prefName = UI.getPrefectures()[prefCode] || '';
 
+            const cityName = $dayDiv.find('.open-city-modal-btn').data('city-name') || '';
             const dayData = {
                 date: $dayDiv.find('.travel-date').val(),
                 prefCode: prefCode, // prefCodeも保存
                 area: prefName,
-                city: $dayDiv.find('.city-select').val(),
+                city: cityName,
                 accommodation: $dayDiv.find('.accommodation').val(),
                 places: [],
                 doEat: $dayDiv.find('.must-do-eat').val().trim().split('\n').filter(Boolean),
