@@ -37,7 +37,7 @@ const MARKDOWN_PARSER = (function() {
                 key = extractText(strongToken.tokens);
                 const keyIndex = item.tokens[0].tokens.indexOf(strongToken);
                 const valueTokens = item.tokens[0].tokens.slice(keyIndex + 1);
-                value = extractText(valueTokens).replace(/^:\s*/, '').trim();
+                value = extractText(valueTokens).replace(/^[：:]\s*/, '').trim();
                 isKeyValue = true;
             }
         }
@@ -57,7 +57,7 @@ const MARKDOWN_PARSER = (function() {
         const tokens = marked.lexer(text);
         const firstHeadingToken = tokens.find(token => token.type === 'heading');
         const isSuggestionMode = firstHeadingToken && firstHeadingToken.depth === 1 && firstHeadingToken.text === '★★★ 行先提案モード ★★★';
-        const data = { general: {}, days: [], suggestion: {}, isSuggestionMode: isSuggestionMode };
+        const data = { general: { transport: {} }, days: [], suggestion: {}, isSuggestionMode: isSuggestionMode };
 
         /**
          * 交通情報の文字列を解析します。
@@ -91,7 +91,7 @@ const MARKDOWN_PARSER = (function() {
 
         // 共通の基本情報パース処理
         function parseGeneralInfo(items, targetData) {
-            targetData.transport = {}; // Initialize transport object
+            targetData.transport = {}; // 常にtransportオブジェクトを初期化
             items.forEach(item => {
                 const parsedItem = parseListItem(item);
                 if (parsedItem.isKeyValue) {
@@ -172,7 +172,7 @@ const MARKDOWN_PARSER = (function() {
                     }
                     else if (title.includes('日目')) {
                         currentSection = 'day';
-                        currentDay = { places: [], doEat: [], notes: [] };
+                        currentDay = { places: [], doEat: [], notes: [], transport: {} };
                         data.days.push(currentDay);
                         const dateMatch = title.match(/（(\d{4}\/\d{1,2}\/\d{1,2})・/);
                         if (dateMatch) {

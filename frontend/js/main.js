@@ -43,7 +43,6 @@ $(document).ready(function(){
             if (savedMarkdown) {
                 if (confirm('以前保存したプランが見つかりました。復元しますか？\n（キャンセルするとデータは削除されます）')) {
                     const data = MARKDOWN_PARSER.parse(savedMarkdown);
-                    console.log('Parsed data from Markdown:', data); // デバッグログ追加
                     if (data) {
                         UI.populateFormFromData(data);
                         UI.showStatusMessage('以前のプランを復元しました。');
@@ -71,9 +70,7 @@ $(document).ready(function(){
      */
     function setupEventHandlers() {
         // (イベントハンドラのコードは変更なし)
-        if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
-            $('#run-tests-btn').show();
-        }
+        
         $('.add-day-btn').on('click', () => UI.addDay());
         $('.toggle-import-btn').on('click', () => $('#import-area').slideToggle());
         $('#days-container')
@@ -110,7 +107,7 @@ $(document).ready(function(){
         $('.import-button').on('click', handleImport);
         $('.generate-btn').on('click', handleGenerateMarkdown);
         $('.copy-button').on('click', handleCopyMarkdown);
-        $('#run-tests-btn').on('click', () => { if (typeof TEST_RUNNER !== 'undefined') TEST_RUNNER.runAllTests(); });
+        
     }
 
     /**
