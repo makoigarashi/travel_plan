@@ -180,7 +180,6 @@ const UI = (function() {
 
             // 基本情報の往路・復路の交通情報復元ロジックを修正
             if (data.general?.transport) {
-                console.log('UI: populateFormFromData - general.transport:', data.general.transport); // デバッグログ追加
                 const { outbound, inbound } = data.general.transport;
 
                 // 交通情報が存在する場合、detailsタグを開く
@@ -218,6 +217,14 @@ const UI = (function() {
                 data.days.forEach(dayData => publicMethods.addDay(dayData));
             } else {
                 publicMethods.addDay(); // Add one empty day if none exists
+            }
+
+            // AI提案モードのフォーム項目を復元
+            if (data.isSuggestionMode && data.suggestion) {
+                $('#arrival-point').val(data.suggestion.arrivalPoint || '');
+                $('#trip-start-date').val(data.suggestion.startDate || '');
+                $('#trip-end-date').val(data.suggestion.endDate || '');
+                $('#trip-remarks').val(data.suggestion.remarks ? data.suggestion.remarks.join('\n') : '');
             }
 
             $('#ai-suggestion-mode').prop('checked', data.isSuggestionMode || false).trigger('change');
