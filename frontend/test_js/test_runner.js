@@ -41,7 +41,7 @@ $(document).ready(function(){
             console.group(`Test Case ${index + 1}: ${scenario.name}`);
             try {
                 // グローバルスコープにあるパーサー関数を呼び出す
-                const actual = DATA_MANAGER.parseMarkdownFromText(scenario.input);
+                const actual = MARKDOWN_PARSER.parse(scenario.input);
                 
                 // 期待値のデフォルト値を補完
                 // const expected = $.extend(true, {}, {
