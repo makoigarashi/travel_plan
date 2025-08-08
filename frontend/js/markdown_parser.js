@@ -59,8 +59,39 @@ const MARKDOWN_PARSER = (function() {
         const isSuggestionMode = firstHeadingToken && firstHeadingToken.depth === 1 && firstHeadingToken.text === '★★★ 行先提案モード ★★★';
         const data = { general: {}, days: [], suggestion: {}, isSuggestionMode: isSuggestionMode };
 
+        /**
+         * 交通情報の文字列を解析します。
+         * @param {string} transportString - 交通情報の文字列。
+         * @returns {object} 解析された交通情報オブジェクト。
+         */
+        function parseTransportString(transportString) {
+            // Updated regex to handle optional name and more robust whitespace matching
+            // Group 1: type, Group 2: name (optional), Group 3: depLocation, Group 4: depTime, Group 5: arrLocation, Group 6: arrTime
+            const regex = /^(.+?)(?:\s(.+?))?\uFF08(.+?)\s(.+?)発\s→\s(.+?)\s(.+?)\u7740\uFF09$/;
+            const match = transportString.match(regex);
+            if (match) {
+                const type = match[1].trim();
+                const name = match[2] ? match[2].trim() : ''; // name is now match[2], can be undefined
+                const depLocation = match[3].trim();
+                const depTime = match[4].trim();
+                const arrLocation = match[5].trim();
+                const arrTime = match[6].trim();
+
+                return {
+                    type: type,
+                    name: name,
+                    depLocation: depLocation,
+                    depTime: depTime,
+                    arrLocation: arrLocation,
+                    arrTime: arrTime
+                };
+            }
+            return {};
+        }
+
         // 共通の基本情報パース処理
         function parseGeneralInfo(items, targetData) {
+            targetData.transport = {}; // Initialize transport object
             items.forEach(item => {
                 const parsedItem = parseListItem(item);
                 if (parsedItem.isKeyValue) {
@@ -70,6 +101,8 @@ const MARKDOWN_PARSER = (function() {
                     else if (key.includes('メンバー構成')) targetData.members = value;
                     else if (key.includes('旅のテーマ')) targetData.theme = value;
                     else if (key.includes('最優先事項')) targetData.priority = value;
+                    else if (key.includes('往路の交通情報')) targetData.transport.outbound = parseTransportString(value);
+                    else if (key.includes('復路の交通情報')) targetData.transport.inbound = parseTransportString(value);
                 }
             });
         }
@@ -165,6 +198,8 @@ const MARKDOWN_PARSER = (function() {
                                     currentDay.city = areaParts ? areaParts[2].trim() : '';
                                 } else if (parsedItem.key.includes('宿泊先')) {
                                     currentDay.accommodation = parsedItem.value;
+                                } else if (parsedItem.key.includes('この日の主な移動')) {
+                                    currentDay.transport = parseTransportString(parsedItem.value);
                                 }
                             }
                             if(item.tokens.length > 1 && item.tokens[1] && item.tokens[1].type === 'list') {

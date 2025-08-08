@@ -43,6 +43,7 @@ $(document).ready(function(){
             if (savedMarkdown) {
                 if (confirm('以前保存したプランが見つかりました。復元しますか？\n（キャンセルするとデータは削除されます）')) {
                     const data = MARKDOWN_PARSER.parse(savedMarkdown);
+                    console.log('Parsed data from Markdown:', data); // デバッグログ追加
                     if (data) {
                         UI.populateFormFromData(data);
                         UI.showStatusMessage('以前のプランを復元しました。');
@@ -233,6 +234,7 @@ $(document).ready(function(){
             markdown = MARKDOWN_GENERATOR.generateSuggestionMarkdown(templateData);
         } else {
             const templateData = DATA_MANAGER.getCurrentFormData();
+            templateData.proactiveSuggestions = $('#proactive-suggestions').is(':checked');
             templateData.days.forEach((day, index) => {
                 day.dayNumber = index + 1;
                 if(day.date) {
@@ -240,9 +242,11 @@ $(document).ready(function(){
                     day.date = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
                     day.dayOfWeek = AppConfig.dayNames[date.getDay()];
                 }
-                day.area = day.city ? `${day.area} (${day.city})` : day.area;
+                // areaはprefCodeとcityから再構築
+                const allPrefectures = UI.getPrefectures();
+                const prefName = allPrefectures[day.prefCode] || '';
+                day.area = day.city ? `${prefName} (${day.city})` : prefName;
             });
-            templateData.proactiveSuggestions = $('#proactive-suggestions').is(':checked');
             markdown = MARKDOWN_GENERATOR.generateStandardMarkdown(templateData);
         }
 
