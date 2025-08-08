@@ -1,33 +1,76 @@
 // テストランナーのロジック
 // このファイルは、index.htmlから読み込まれます
 
-// テスト結果を比較するためのヘルパー関数
-// JSON.stringifyだとオブジェクトのキーの順序に影響されるため、より堅牢な比較を行う
-function deepEqual(obj1, obj2) {
-    if (obj1 === obj2) return true;
+// =============================================
+// テストフレームワーク
+// =============================================
+const TEST_RUNNER = (function(){
+    let passed = 0;
+    let failed = 0;
 
-    if (obj1 && typeof obj1 == 'object' && obj2 && typeof obj2 == 'object') {
-        if (Object.keys(obj1).length !== Object.keys(obj2).length) return false;
+    // --- ヘルパー関数 ---
+    function deepEqual(obj1, obj2) {
+        if (obj1 === obj2) return true;
+        if (obj1 && typeof obj1 == 'object' && obj2 && typeof obj2 == 'object') {
+            const keys1 = Object.keys(obj1);
+            const keys2 = Object.keys(obj2);
+            if (keys1.length !== keys2.length) return false;
+            for (const key of keys1) {
+                if (!keys2.includes(key) || !deepEqual(obj1[key], obj2[key])) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return false;
+    }
 
-        for (var key in obj1) {
-            if (obj2.hasOwnProperty(key)) {
-                if (!deepEqual(obj1[key], obj2[key])) return false;
-            } else {
-                return false;
+    // --- アサーション関数 ---
+    const assert = {
+        equals: function(actual, expected, message) {
+            if (actual !== expected) {
+                throw new Error(`${message}\n[期待値]: ${expected}\n[実際値]: ${actual}`);
+            }
+        },
+        deepEquals: function(actual, expected, message) {
+            if (!deepEqual(actual, expected)) {
+                throw new Error(`${message}\n[期待値]: ${JSON.stringify(expected, null, 2)}\n[実際値]: ${JSON.stringify(actual, null, 2)}`);
+            }
+        },
+        isTrue: function(value, message) {
+            if (!value) {
+                throw new Error(message);
             }
         }
-        return true;
+    };
+
+    // --- UI操作シミュレーター ---
+    const simulate = {
+        input: function(selector, value) {
+            $(selector).val(value).trigger('change');
+        },
+        click: function(selector) {
+            $(selector).trigger('click');
+        }
+    };
+
+    // --- テスト実行 --- 
+    async function runTest(scenario) {
+        console.group(`Test Case: ${scenario.name}`);
+        try {
+            await scenario.test(assert, simulate);
+            console.log("%c✅ PASS", "color: green; font-weight: bold;");
+            passed++;
+        } catch (e) {
+            console.error("%c❌ FAIL", "color: red; font-weight: bold;", e.message);
+            failed++;
+        }
+        console.groupEnd();
     }
-    return false;
-}
 
-
-$(document).ready(function(){
-    // テスト実行ボタンのクリックイベント
-    $('#run-tests-btn').on('click', function(){
-        let passed = 0;
-        let failed = 0;
-        
+    async function runAllTests() {
+        passed = 0;
+        failed = 0;
         console.clear();
         console.log("%c--- シナリオテスト開始 ---", "color: blue; font-size: 16px;");
 
@@ -36,38 +79,27 @@ $(document).ready(function(){
             return;
         }
 
-        // すべてのシナリオを順番に実行
-        scenarios.forEach((scenario, index) => {
-            console.group(`Test Case ${index + 1}: ${scenario.name}`);
-            try {
-                // グローバルスコープにあるパーサー関数を呼び出す
-                const actual = MARKDOWN_PARSER.parse(scenario.input);
-                
-                // 期待値のデフォルト値を補完
-                // const expected = $.extend(true, {}, {
-                //     general: { departure: "札幌", members: "", theme: "", priority: "" },
-                //     days: []
-                // }, scenario.expected);
-                const expected = scenario.expected;
-
-                // 結果と期待値を比較
-                if (deepEqual(actual, expected)) {
-                    console.log("%c✅ PASS", "color: green; font-weight: bold;");
-                    passed++;
-                } else {
-                    console.error("%c❌ FAIL", "color: red; font-weight: bold;");
-                    console.log("期待値 (Expected):", expected);
-                    console.log("実際の結果 (Actual):", actual);
-                    failed++;
-                }
-            } catch (e) {
-                console.error("%c❌ ERROR", "color: red; font-weight: bold;", e);
-                failed++;
-            }
-            console.groupEnd();
-        });
+        for (const scenario of scenarios) {
+            await runTest(scenario);
+        }
 
         console.log(`%c--- テスト完了：${passed}件成功, ${failed}件失敗 ---`, "color: blue; font-size: 16px;");
         alert(`テスト完了：${passed}件成功, ${failed}件失敗\n詳細はコンソールを確認してください。`);
-    });
+    }
+
+    return {
+        runAllTests
+    };
+})();
+
+// DOM読み込み後にイベントリスナーを登録
+document.addEventListener('DOMContentLoaded', function() {
+    // ローカル環境でのみテストボタンを表示
+    if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
+        const runTestsBtn = document.getElementById('run-tests-btn');
+        if (runTestsBtn) {
+            runTestsBtn.style.display = 'block';
+            runTestsBtn.addEventListener('click', TEST_RUNNER.runAllTests);
+        }
+    }
 });
