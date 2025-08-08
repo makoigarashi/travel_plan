@@ -1,4 +1,3 @@
-
 # ★★★ 行先提案モード ★★★
 あなたが行先も含めて、最高の旅行プランを提案してください.
 
@@ -9,6 +8,16 @@
 *   **メンバー構成・体力レベル**: {{general.members}}
 *   **旅のテーマ・雰囲気**: {{general.theme}}
 *   **最優先事項**: {{general.priority}}
+{{#with general.transport.outbound}}
+{{#if name}}
+*   **往路の交通情報**: {{type}} {{name}}（{{depLocation}} {{depTime}}発 → {{arrLocation}} {{arrTime}}着）
+{{/if}}
+{{/with}}
+{{#with general.transport.inbound}}
+{{#if name}}
+*   **復路の交通情報**: {{type}} {{name}}（{{depLocation}} {{depTime}}発 → {{arrLocation}} {{arrTime}}着）
+{{/if}}
+{{/with}}
 *   **備考・その他の要望**:
 {{#if suggestion.remarks}}
 {{#each suggestion.remarks}}
@@ -35,4 +44,3 @@
 
 提案は、メインのプランとは別に**『プランナーからの+α提案』**というセクションを設けて記載し、**素晴らしいアイデアがあれば複数提案することを歓迎します。**その際、それぞれの提案について、**『何を』『なぜおすすめなのか』『それを実行する場合、スケジュールのどこをどう調整する必要があるか』**を具体的に明記してください。
 {{/if}}
-    

@@ -1,4 +1,3 @@
-
 # 旅行プランの作成依頼
 
 あなたは非常に優秀で、柔軟な思考ができる旅行プランナーです。以下の条件と希望をすべて満たす、最高の旅行プランを提案してください。
@@ -9,10 +8,26 @@
 *   **旅のテーマ・雰囲気**: {{general.theme}}
 *   **最優先事項**: {{general.priority}}
 
+{{#with general.transport.outbound}}
+{{#if type}}
+*   **往路の交通情報**: {{type}} {{name}}（{{depLocation}} {{depTime}}発 → {{arrLocation}} {{arrTime}}着）
+{{/if}}
+{{/with}}
+{{#with general.transport.inbound}}
+{{#if type}}
+*   **復路の交通情報**: {{type}} {{name}}（{{depLocation}} {{depTime}}発 → {{arrLocation}} {{arrTime}}着）
+{{/if}}
+{{/with}}
+
 {{#each days}}
 ### {{dayNumber}}日目（{{date}}・{{dayOfWeek}}）
 *   **主な活動エリア**: {{area}}
 *   **宿泊先／最終目的地**: {{accommodation}}
+{{#with transport}}
+{{#if type}}
+*   **この日の主な移動**: {{type}} {{name}}（{{depLocation}} {{depTime}}発 → {{arrLocation}} {{arrTime}}着）
+{{/if}}
+{{/with}}
 *   **行きたい場所**:
 {{#each places}}
     *   {{#if url}}[{{name}}]({{url}}){{else}}{{name}}{{/if}}
@@ -42,4 +57,3 @@
 
 提案は、メインのプランとは別に**『プランナーからの+α提案』**というセクションを設けて記載し、**素晴らしいアイデアがあれば複数提案することを歓迎します。**その際、それぞれの提案について、**『何を』『なぜおすすめなのか』『それを実行する場合、スケジュールのどこをどう調整する必要があるか』**を具体的に明記してください。
 {{/if}}
-    
