@@ -139,7 +139,7 @@ const UI = (function() {
                     $newDay.find(`#day-transport-details-${dayCount}`).prop('open', true);
                 }
 
-                $newDay.find('.day-transport-type').val(data.transport.type || '飛行機');
+                $newDay.find('.day-transport-type').val(data.transport.type || '');
                 $newDay.find('.day-transport-name').val(data.transport.name || '');
                 $newDay.find('.day-transport-dep-location').val(data.transport.depLocation || '');
                 $newDay.find('.day-transport-arr-location').val(data.transport.arrLocation || '');
