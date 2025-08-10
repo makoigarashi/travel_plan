@@ -49,24 +49,29 @@ const DATA_MANAGER = (function() {
 
         $('.day-plan').each(function(){
             const $dayDiv = $(this);
+            const dayTransportType = $dayDiv.find('.day-transport-type').val();
             const dayData = {
                 date: $dayDiv.find('.travel-date').val(),
                 prefCode: $dayDiv.find('.open-prefecture-modal-btn').data('pref-code'),
                 area: $dayDiv.find('.open-prefecture-modal-btn').text(),
                 city: $dayDiv.find('.open-city-modal-btn').data('city-name'),
                 accommodation: $dayDiv.find('.accommodation').val(),
-                transport: {
-                    type: $dayDiv.find('.day-transport-type').val(),
+                transport: {}, // Initialize as empty
+                places: [],
+                doEat: $dayDiv.find('.must-do-eat').val().trim().split('\n').filter(Boolean),
+                notes: $dayDiv.find('.day-specific-notes').val().trim().split('\n').filter(Boolean)
+            };
+
+            if (dayTransportType) {
+                dayData.transport = {
+                    type: dayTransportType,
                     name: $dayDiv.find('.day-transport-name').val(),
                     depLocation: $dayDiv.find('.day-transport-dep-location').val(),
                     depTime: getTimeFromSelects($dayDiv.find('.day-transport-dep-hour'), $dayDiv.find('.day-transport-dep-minute')),
                     arrLocation: $dayDiv.find('.day-transport-arr-location').val(),
                     arrTime: getTimeFromSelects($dayDiv.find('.day-transport-arr-hour'), $dayDiv.find('.day-transport-arr-minute')),
-                },
-                places: [],
-                doEat: $dayDiv.find('.must-do-eat').val().trim().split('\n').filter(Boolean),
-                notes: $dayDiv.find('.day-specific-notes').val().trim().split('\n').filter(Boolean)
-            };
+                };
+            }
 
             $dayDiv.find('.places-container .dynamic-input-group').each(function(){
                 const name = $(this).find('.place-name').val().trim();
