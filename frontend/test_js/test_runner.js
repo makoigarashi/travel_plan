@@ -84,7 +84,8 @@ const TEST_RUNNER = (function(){
         }
 
         console.log(`%c--- テスト完了：${passed}件成功, ${failed}件失敗 ---`, "color: blue; font-size: 16px;");
-        alert(`テスト完了：${passed}件成功, ${failed}件失敗\n詳細はコンソールを確認してください。`);
+        alert(`テスト完了：${passed}件成功, ${failed}件失敗\n詳細はコンソールを確認してください。\n\nフォームを初期化するため、ページをリロードします。`);
+        location.reload();
     }
 
     return {
