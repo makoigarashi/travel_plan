@@ -38,6 +38,10 @@ const AppConfig = {
     // デバッグモードのON/OFF
     DEBUG_FLAG: false,
 
+    // アプリケーションのバージョン情報
+    version: '4.1',
+    appName: '日付自動設定機能追加版',
+
     // フォームのデフォルト値
     defaultValues: {
         departure: "札幌",
