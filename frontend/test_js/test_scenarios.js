@@ -18,9 +18,19 @@ const scenarios = [
     *   ご当地名物を食べる
 `;
             const expected = {
-                general: { departure: "札幌", priority: "美術館に行く", transport: {} },
-                days: [ { date: "2025-08-02", area: "北海道", city: "苫小牧市", places: [ { name: "苫小牧市美術博物館", url: "https://example.com/museum" } ], doEat: ["ご当地名物を食べる"], notes: [], transport: {} } ],
-                suggestion: {}, isSuggestionMode: false
+                general: { transport: {}, departure: "札幌", priority: "美術館に行く" },
+                days: [ {
+                    places: [ { name: "苫小牧市美術博物館", url: "https://example.com/museum" } ],
+                    doEat: ["ご当地名物を食べる"],
+                    notes: [],
+                    transport: {},
+                    isAiSuggestion: false,
+                    date: "2025-08-02",
+                    area: "北海道",
+                    city: "苫小牧市"
+                } ],
+                suggestion: {},
+                isSuggestionMode: false
             };
             const actual = MARKDOWN_PARSER.parse(input);
             assert.deepEquals(actual, expected, "基本的なパースが正しく行われること");
@@ -42,16 +52,22 @@ const scenarios = [
 `;
             const expected = {
                 general: {
-                    departure: "東京", members: "30代夫婦、体力に自信あり",
-                    transport: { outbound: { type: "飛行機", name: "ANA123", depLocation: "羽田空港", depTime: "08:00", arrLocation: "新千歳空港", arrTime: "09:30" } }
+                    transport: { outbound: { type: "飛行機", name: "ANA123", depLocation: "羽田空港", depTime: "08:00", arrLocation: "新千歳空港", arrTime: "09:30" } },
+                    departure: "東京", 
+                    members: "30代夫婦、体力に自信あり"
                 },
                 days: [ { 
-                    date: "2025-09-01", area: "北海道", city: "札幌市", 
-                    transport: { type: "バス", name: "", depLocation: "札幌駅", depTime: "10:00", arrLocation: "大通公園", arrTime: "10:15" },
                     places: [ { name: "札幌時計台", url: "https://example.com/sapporo-clock-tower" } ],
-                    doEat: [], notes: []
+                    doEat: [], 
+                    notes: [],
+                    transport: { type: "バス", name: "", depLocation: "札幌駅", depTime: "10:00", arrLocation: "大通公園", arrTime: "10:15" },
+                    isAiSuggestion: false,
+                    date: "2025-09-01", 
+                    area: "北海道", 
+                    city: "札幌市"
                 } ],
-                suggestion: {}, isSuggestionMode: false
+                suggestion: {}, 
+                isSuggestionMode: false
             };
             const actual = MARKDOWN_PARSER.parse(input);
             assert.deepEquals(actual, expected, "交通情報を含む複雑なパースが正しく行われること");
