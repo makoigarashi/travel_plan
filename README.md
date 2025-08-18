@@ -1,0 +1,74 @@
+# 旅行プラン・プロンプトジェネレーター
+
+AI(LLM)に旅行プランの作成を依頼するための、詳細な指示（プロンプト）を対話形式で簡単に生成できるウェブアプリケーションです。
+
+**公開URL: [https://storage.googleapis.com/migarashi_travel_plan/index.html](https://storage.googleapis.com/migarashi_travel_plan/index.html)**
+
+## 主な機能
+
+*   **柔軟なプランニングモード:**
+    *   **通常モード:** 日付、場所、交通手段、行きたい場所などを細かく指定して、具体的なプロンプトを生成できます。
+    *   **AI提案モード:** 到着地や旅行期間といった大まかな希望を伝えるだけで、行き先の選定からAIに任せるプロンプトを生成できます。
+    *   **日ごとのおまかせ設定:** 特定の日だけ「AIにおまかせ」にすることで、固定プランとAIの提案を組み合わせた、ハイブリッドな旅行計画が可能です。
+*   **プロンプトのインポート/エクスポート:**
+    *   一度生成したプロンプトをテキストとしてコピーできます。
+    *   コピーしたプロンプトを貼り付けることで、いつでも入力内容を復元し、再編集できます。
+*   **カスタマイズ機能:**
+    *   出発地やメンバー構成などのデフォルト値を設定し、毎回入力する手間を省けます。
+
+## 技術スタック
+
+*   **フロントエンド:** HTML, CSS (Tailwind CSS), JavaScript (jQuery, Handlebars.js)
+*   **バックエンド (APIプロキシ):** Node.js, Express
+*   **ホスティング:**
+    *   フロントエンド: Google Cloud Storage (GCS)
+    *   バックエンド: Google Cloud Run
+*   **外部API:**
+    *   [国土交通省 共通API](https://www.mlit.go.jp/plateau/api/): 市区町村データの取得に使用しています。
+
+## ローカルでの実行方法
+
+### 前提条件
+
+*   [Node.js](https://nodejs.org/) (v18以上を推奨)
+
+### 手順
+
+1.  **リポジトリをクローンします。**
+
+2.  **バックエンドサーバーをセットアップします。**
+    a. `backend`ディレクトリに移動します。
+       ```bash
+       cd backend
+       ```
+    b. `.env`ファイルを作成し、APIキーを設定します。
+       ```
+       MLIT_API_KEY="ここに国土交通省APIのキーを記述"
+       ```
+    c. 依存関係をインストールします。
+       ```bash
+       npm install
+       ```
+    d. 開発サーバーを起動します。
+       ```bash
+       npm run dev
+       ```
+       サーバーが `http://localhost:8080` で起動します。
+
+3.  **フロントエンドを開きます。**
+
+    VS Codeの拡張機能である [Live Server](https://marketplace.visualstudio.com/items?itemName=ritwickdey.LiveServer) の使用を推奨します。
+
+    a. VS Codeでプロジェクトのルートディレクトリを開きます。
+    b. `frontend/index.html` ファイルを右クリックし、「Open with Live Server」を選択します。
+    c. ブラウザで `http://127.0.0.1:5500` のようなアドレスが自動的に開かれ、アプリケーションが表示されます。
+
+    > **Note**
+    > `index.html` をファイルとして直接ブラウザで開くと、API通信が正常に動作しないため、必ずローカルサーバー経由でアクセスしてください。
+
+## デプロイ
+
+このプロジェクトは`cloudbuild.yaml`の設定に基づき、Google Cloud Platformへ自動的にデプロイされます。
+
+*   **フロントエンド:** `frontend`ディレクトリの内容がGoogle Cloud Storageに同期されます。
+*   **バックエンド:** `backend`ディレクトリの内容がコンテナ化され、Google Cloud Runにデプロイされます。
