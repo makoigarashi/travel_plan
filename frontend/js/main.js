@@ -29,7 +29,7 @@ $(document).ready(function(){
             $('#theme').attr('placeholder', AppConfig.defaultValues.theme);
             $('#priority').attr('placeholder', AppConfig.defaultValues.priority);
             const randomPrefix = AppConfig.prefixes[Math.floor(Math.random() * AppConfig.prefixes.length)];
-            $('#version-info').text(`${randomPrefix}出発地設定・複数日対応版 (Ver. 4.0-beta)`);
+            $('#version-info').text(`${randomPrefix}${AppConfig.appName} (Ver. ${AppConfig.version})`);
 
             // --- イベントハンドラ設定 ---
             setupEventHandlers();
@@ -71,7 +71,32 @@ $(document).ready(function(){
     function setupEventHandlers() {
         // (イベントハンドラのコードは変更なし)
         
-        $('.add-day-btn').on('click', () => UI.addDay());
+        $('.add-day-btn').on('click', () => {
+            const $lastDay = $('.day-plan:last');
+            let nextDate = '';
+
+            if ($lastDay.length) {
+                const lastDateVal = $lastDay.find('.travel-date').val();
+                if (lastDateVal) {
+                    try {
+                        // UTCで日付を解釈して、タイムゾーン問題を回避する
+                        const lastDate = new Date(lastDateVal + 'T00:00:00');
+                        lastDate.setDate(lastDate.getDate() + 1);
+                        
+                        const year = lastDate.getFullYear();
+                        const month = String(lastDate.getMonth() + 1).padStart(2, '0');
+                        const day = String(lastDate.getDate()).padStart(2, '0');
+                        
+                        nextDate = `${year}-${month}-${day}`;
+                    } catch (e) {
+                        console.error("日付の計算中にエラーが発生しました:", e);
+                        nextDate = ''; // エラー時は空にする
+                    }
+                }
+            }
+            
+            UI.addDay({ date: nextDate });
+        });
         $('.toggle-import-btn').on('click', () => $('#import-area').slideToggle());
         $('#days-container')
             .on('click', '.open-prefecture-modal-btn', function() {
