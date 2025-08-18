@@ -4,66 +4,77 @@
                 <span>{{dayNumber}}日目</span>
                 <button type="button" class="bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 text-xs rounded-full remove-day-btn">この日を削除</button>
             </h2>
-            <label class="block mb-2 font-semibold">日付</label>
-            <input type="date" class="travel-date w-full p-2 border border-gray-300 rounded-md mb-4">
-            <label class="block mb-2 font-semibold">主な活動エリア</label>
-            <div class="flex gap-4 mb-4">
-                <button type="button" class="open-prefecture-modal-btn w-1/2 p-2 border border-gray-300 rounded-md text-left text-gray-500" data-pref-code="">都道府県を選択</button>
-                <button type="button" class="open-city-modal-btn w-1/2 p-2 border border-gray-300 rounded-md text-left text-gray-500" data-city-name="" disabled>市町村を選択</button>
+
+            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-4 rounded-md">
+              <label class="flex items-center font-normal cursor-pointer">
+                  <input type="checkbox" class="day-ai-suggestion-mode mr-3 h-4 w-4 text-yellow-600 border-gray-300 rounded focus:ring-yellow-500">
+                  この日はAIにおまかせする
+              </label>
             </div>
+
             <label class="block mb-2 font-semibold">宿泊先／最終目的地</label>
             <input type="text" class="accommodation w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：ホテル、空港など">
 
-            <!-- この日の主要な移動手段フォーム -->
-            <div class="mt-4">
-                <details id="day-transport-details-{{dayNumber}}" class="bg-gray-50 p-3 rounded-md shadow-inner">
-                    <summary class="font-semibold cursor-pointer text-sm text-blue-600 hover:text-blue-800">
-                        この日の主要な移動手段を入力する（任意）
-                    </summary>
-                    <div class="mt-3 border-t pt-3 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">種別</label>
-                            <select class="day-transport-type w-full p-2 mt-1 border border-gray-300 rounded-md">
-                                <option value="" selected>未選択</option><option>飛行機</option><option>列車</option><option>バス</option><option>フェリー</option><option>その他</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">便名/列車名など</label>
-                            <input type="text" class="day-transport-name w-full p-2 mt-1 border border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">出発地</label>
-                            <input type="text" class="day-transport-dep-location w-full p-2 mt-1 border border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">出発時刻</label>
-                            <div class="flex gap-2">
-                                <select class="day-transport-dep-hour w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
-                                <select class="day-transport-dep-minute w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
-                            </div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">到着地</label>
-                            <input type="text" class="day-transport-arr-location w-full p-2 mt-1 border border-gray-300 rounded-md">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-600">到着時刻</label>
-                            <div class="flex gap-2">
-                                <select class="day-transport-arr-hour w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
-                                <select class="day-transport-arr-minute w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
-                            </div>
-                        </div>
-                    </div>
-                </details>
-            </div>
+            <div class="day-manual-inputs">
+                <label class="block mb-2 font-semibold">日付</label>
+                <input type="date" class="travel-date w-full p-2 border border-gray-300 rounded-md mb-4">
+                <label class="block mb-2 font-semibold">主な活動エリア</label>
+                <div class="flex gap-4 mb-4">
+                    <button type="button" class="open-prefecture-modal-btn w-1/2 p-2 border border-gray-300 rounded-md text-left text-gray-500" data-pref-code="">都道府県を選択</button>
+                    <button type="button" class="open-city-modal-btn w-1/2 p-2 border border-gray-300 rounded-md text-left text-gray-500" data-city-name="" disabled>市町村を選択</button>
+                </div>
 
-            <label class="block mb-2 font-semibold">この日に行きたい場所</label>
-            <div class="dynamic-input-container places-container"></div>
-            <button type="button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 text-sm rounded-lg -mt-2 add-item-btn add-place-btn">場所を追加</button>
-            <button type="button" class="mt-4 mb-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-colors search-events-btn disabled:opacity-50 disabled:cursor-not-allowed" disabled>この日のイベントを検索する (Walker+)</button>
-            <label class="block mt-4 mb-2 font-semibold">やりたいこと・食べたいもの</label>
-            <textarea class="must-do-eat w-full p-2 border border-gray-300 rounded-md min-h-[80px]"></textarea>
-            <label class="block mt-4 mb-2 font-semibold">交通パス・時間指定など</label>
-            <textarea class="day-specific-notes w-full p-2 border border-gray-300 rounded-md min-h-[80px]"></textarea>
+                <!-- この日の主要な移動手段フォーム -->
+                <div class="mt-4">
+                    <details id="day-transport-details-{{dayNumber}}" class="bg-gray-50 p-3 rounded-md shadow-inner">
+                        <summary class="font-semibold cursor-pointer text-sm text-blue-600 hover:text-blue-800">
+                            この日の主要な移動手段を入力する（任意）
+                        </summary>
+                        <div class="mt-3 border-t pt-3 grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600">種別</label>
+                                <select class="day-transport-type w-full p-2 mt-1 border border-gray-300 rounded-md">
+                                    <option value="" selected>未選択</option><option>飛行機</option><option>列車</option><option>バス</option><option>フェリー</option><option>その他</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600">便名/列車名など</label>
+                                <input type="text" class="day-transport-name w-full p-2 mt-1 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600">出発地</label>
+                                <input type="text" class="day-transport-dep-location w-full p-2 mt-1 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600">出発時刻</label>
+                                <div class="flex gap-2">
+                                    <select class="day-transport-dep-hour w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
+                                    <select class="day-transport-dep-minute w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600">到着地</label>
+                                <input type="text" class="day-transport-arr-location w-full p-2 mt-1 border border-gray-300 rounded-md">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-600">到着時刻</label>
+                                <div class="flex gap-2">
+                                    <select class="day-transport-arr-hour w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
+                                    <select class="day-transport-arr-minute w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
+                                </div>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <label class="block mb-2 font-semibold">この日に行きたい場所</label>
+                <div class="dynamic-input-container places-container"></div>
+                <button type="button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 text-sm rounded-lg -mt-2 add-item-btn add-place-btn">場所を追加</button>
+                <button type="button" class="mt-4 mb-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-colors search-events-btn disabled:opacity-50 disabled:cursor-not-allowed" disabled>この日のイベントを検索する (Walker+)</button>
+                <label class="block mt-4 mb-2 font-semibold">やりたいこと・食べたいもの</label>
+                <textarea class="must-do-eat w-full p-2 border border-gray-300 rounded-md min-h-[80px]"></textarea>
+                <label class="block mt-4 mb-2 font-semibold">交通パス・時間指定など</label>
+                <textarea class="day-specific-notes w-full p-2 border border-gray-300 rounded-md min-h-[80px]"></textarea>
+            </div>
         </div>
     

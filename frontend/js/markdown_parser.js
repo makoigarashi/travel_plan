@@ -200,6 +200,8 @@ const MARKDOWN_PARSER = (function() {
                                     currentDay.accommodation = parsedItem.value;
                                 } else if (parsedItem.key.includes('この日の主な移動')) {
                                     currentDay.transport = parseTransportString(parsedItem.value);
+                                } else if (parsedItem.key.includes('プラン') && parsedItem.value.includes('AIにおまかせ')) {
+                                    currentDay.isAiSuggestion = true;
                                 }
                             }
                             if(item.tokens.length > 1 && item.tokens[1] && item.tokens[1].type === 'list') {

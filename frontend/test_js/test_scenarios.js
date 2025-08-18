@@ -94,5 +94,54 @@ const scenarios = [
             assert.equals($('#trip-end-date').val(), '2025-10-03', '終了日が正しく設定されていること');
             assert.equals($('#trip-remarks').val(), 'レンタカーを借りたい', '備考が正しく設定されていること');
         }
+    },
+    {
+        name: "[UI] 日ごとのAIおまかせモードの生成と復元",
+        test: async function(assert, simulate) {
+            // --- Part 1: 生成テスト ---
+            console.log("  Part 1: AIおまかせモードでのMarkdown生成をテスト");
+
+            // 1. フォームを設定 (テスト開始時は1日分のはず)
+            // 1日目の設定
+            simulate.input('.day-plan:first .travel-date', '2025-11-01');
+            simulate.input('.day-plan:first .accommodation', 'ホテルA');
+            // 2日目を追加
+            simulate.click('.add-day-btn'); 
+            // 2日目を「AIにおまかせ」にする
+            simulate.click('.day-plan:last .day-ai-suggestion-mode');
+            simulate.input('.day-plan:last .accommodation', 'ホテルB');
+
+            // 2. Markdownを生成
+            simulate.click('.generate-btn');
+            const generatedMarkdown = $('#output-markdown').val();
+            console.log("--- Generated Markdown for Test ---");
+            console.log(generatedMarkdown);
+            console.log("---------------------------------");
+
+            // 3. 生成されたMarkdownを検証
+            assert.isTrue(generatedMarkdown.includes('### 1日目（2025/11/1・土）'), '1日目の見出しが含まれていること');
+            assert.isTrue(generatedMarkdown.includes('*   **宿泊先／最終目的地**: ホテルA'), '1日目の宿泊先が正しいこと');
+            assert.isTrue(generatedMarkdown.includes('### 2日目（2025/11/2・日）'), '2日目の見出しが含まれていること');
+            assert.isTrue(generatedMarkdown.includes('*   **宿泊先／最終目的地**: ホテルB'), '2日目の宿泊先が正しいこと');
+            assert.isTrue(generatedMarkdown.includes('この日はAIにおまかせします'), '2日目がおまかせモードのテキストになっていること');
+            assert.isTrue(!generatedMarkdown.includes('**主な活動エリア**: \n*   **宿泊先／最終目的地**: ホテルB'), '2日目におまかせでない項目がないこと');
+
+            // --- Part 2: 復元テスト ---
+            console.log("  Part 2: AIおまかせモードを含むプロンプトの復元をテスト");
+            
+            // 1. Part 1で生成したMarkdownをインポートエリアに設定
+            simulate.input('#import-prompt', generatedMarkdown);
+            simulate.click('.import-button');
+
+            // 2. フォームの状態を検証
+            assert.equals($('.day-plan').length, 2, '日数が2日に復元されていること');
+            // 1日目の検証
+            assert.isTrue(!$('.day-plan:first .day-ai-suggestion-mode').is(':checked'), '1日目のおまかせチェックがOFFであること');
+            assert.equals($('.day-plan:first .accommodation').val(), 'ホテルA', '1日目の宿泊先が正しく復元されていること');
+            // 2日目の検証
+            assert.isTrue($('.day-plan:last .day-ai-suggestion-mode').is(':checked'), '2日目のおまかせチェックがONであること');
+            assert.equals($('.day-plan:last .accommodation').val(), 'ホテルB', '2日目の宿泊先が正しく復元されていること');
+            assert.isTrue(!$('.day-plan:last .day-manual-inputs').is(':visible'), '2日目の詳細入力欄が非表示になっていること');
+        }
     }
 ];

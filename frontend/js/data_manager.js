@@ -51,6 +51,7 @@ const DATA_MANAGER = (function() {
             const $dayDiv = $(this);
             const dayTransportType = $dayDiv.find('.day-transport-type').val();
             const dayData = {
+                isAiSuggestion: $dayDiv.find('.day-ai-suggestion-mode').is(':checked'),
                 date: $dayDiv.find('.travel-date').val(),
                 prefCode: $dayDiv.find('.open-prefecture-modal-btn').data('pref-code'),
                 area: $dayDiv.find('.open-prefecture-modal-btn').text(),
