@@ -99,6 +99,15 @@ const UI = (function() {
             setupTimeSelects($newDay.find('.day-transport-dep-hour'), $newDay.find('.day-transport-dep-minute'));
             setupTimeSelects($newDay.find('.day-transport-arr-hour'), $newDay.find('.day-transport-arr-minute'));
 
+            const $checkbox = $newDay.find('.day-ai-suggestion-mode');
+            if (data.isAiSuggestion) {
+                $checkbox.prop('checked', true);
+                $newDay.find('.day-manual-inputs').hide();
+            } else {
+                $checkbox.prop('checked', false);
+                $newDay.find('.day-manual-inputs').show();
+            }
+
             // --- Populate new day with data ---
             $newDay.find('.travel-date').val(data.date || '');
             $newDay.find('.accommodation').val(data.accommodation || '');

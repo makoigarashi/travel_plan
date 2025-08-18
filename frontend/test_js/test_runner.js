@@ -58,6 +58,22 @@ const TEST_RUNNER = (function(){
     async function runTest(scenario) {
         console.group(`Test Case: ${scenario.name}`);
         try {
+            // --- テスト前にフォームをリセットし、テスト間の影響をなくす ---
+            if ($('#ai-suggestion-mode').is(':checked')) {
+                $('#ai-suggestion-mode').trigger('click');
+            }
+            while($('.day-plan').length > 1) {
+                $('.day-plan:last .remove-day-btn').trigger('click');
+            }
+            $('#prompt-form')[0].reset();
+            $('#import-prompt').val('');
+            $('.day-plan:first .open-prefecture-modal-btn').text('都道府県を選択').data('pref-code', '');
+            $('.day-plan:first .open-city-modal-btn').text('市町村を選択').data('city-name', '').prop('disabled', true);
+            // 「行きたい場所」をリセットして、新しい空の入力欄を1つだけにする
+            $('.day-plan:first .places-container').empty();
+            $('.day-plan:first .add-place-btn').trigger('click');
+            // -----------------------------------------------------
+
             await scenario.test(assert, simulate);
             console.log("%c✅ PASS", "color: green; font-weight: bold;");
             passed++;

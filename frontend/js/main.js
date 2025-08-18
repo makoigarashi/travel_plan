@@ -123,6 +123,16 @@ $(document).ready(function(){
                  if ($group.parent().children().length > 1) { $group.remove(); }
                  else { alert('最低でも1つの入力欄は必要です。'); }
             })
+            .on('change', '.day-ai-suggestion-mode', function() {
+                const $checkbox = $(this);
+                const $dayPlan = $checkbox.closest('.day-plan');
+                const $manualInputs = $dayPlan.find('.day-manual-inputs');
+                if ($checkbox.is(':checked')) {
+                    $manualInputs.slideUp();
+                } else {
+                    $manualInputs.slideDown();
+                }
+            })
             .on('change', '.travel-date', function() { UI.updateEventButtonState($(this).closest('.day-plan')); })
             .on('click', '.search-events-btn', handleSearchEvents)
 
