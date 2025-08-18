@@ -21,8 +21,11 @@
 
 {{#each days}}
 ### {{dayNumber}}日目（{{date}}・{{dayOfWeek}}）
-*   **主な活動エリア**: {{area}}
 *   **宿泊先／最終目的地**: {{accommodation}}
+{{#if isAiSuggestion}}
+*   **プラン**: この日はAIにおまかせします。宿泊先も考慮して、最高のプランを提案してください。
+{{else}}
+*   **主な活動エリア**: {{area}}
 {{#with transport}}
 {{#if type}}
 *   **この日の主な移動**: {{type}} {{name}}（{{depLocation}} {{depTime}}発 → {{arrLocation}} {{arrTime}}着）
@@ -40,6 +43,7 @@
 {{#each notes}}
     *   {{this}}
 {{/each}}
+{{/if}}
 
 {{/each}}
 ### AIへの特別指示（最重要）
