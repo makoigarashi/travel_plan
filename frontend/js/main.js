@@ -74,6 +74,7 @@ $(document).ready(function(){
         $('.add-day-btn').on('click', () => {
             const $lastDay = $('.day-plan:last');
             let nextDate = '';
+            let prevDayData = {};
 
             if ($lastDay.length) {
                 const lastDateVal = $lastDay.find('.travel-date').val();
@@ -93,9 +94,14 @@ $(document).ready(function(){
                         nextDate = ''; // エラー時は空にする
                     }
                 }
+
+                // 前の日の「主な活動エリア」情報を取得
+                prevDayData.prefCode = $lastDay.find('.open-prefecture-modal-btn').data('pref-code');
+                prevDayData.area = $lastDay.find('.open-prefecture-modal-btn').text(); // 都道府県名
+                prevDayData.city = $lastDay.find('.open-city-modal-btn').data('city-name'); // 市町村名
             }
             
-            UI.addDay({ date: nextDate });
+            UI.addDay({ date: nextDate, ...prevDayData });
         });
         $('.toggle-import-btn').on('click', () => $('#import-area').slideToggle());
         $('#days-container')
