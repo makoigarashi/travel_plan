@@ -58,10 +58,19 @@ const UI = (function() {
                 prefectureList: 'templates/prefecture-list.hbs', cityList: 'templates/city-list.hbs',
                 markdown: 'templates/markdown.hbs', suggestionMarkdown: 'templates/suggestion-markdown.hbs'
             };
-            const promises = Object.entries(templateFiles).map(([name, path]) =>
+            const partialFiles = {
+                proactiveSuggestionPartial: 'templates/_proactive-suggestion-partial.hbs',
+                aiInstructionPartial: 'templates/_ai-instruction-partial.hbs'
+            };
+
+            const partialPromises = Object.entries(partialFiles).map(([name, path]) =>
+                $.get(path).done(source => { Handlebars.registerPartial(name, source); })
+            );
+
+            const templatePromises = Object.entries(templateFiles).map(([name, path]) =>
                 $.get(path).done(source => { templates[name] = Handlebars.compile(source); })
             );
-            return Promise.all(promises);
+            return Promise.all([...partialPromises, ...templatePromises]);
         },
 
         initialize: function(prefs) {
