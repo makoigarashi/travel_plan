@@ -1,0 +1,21 @@
+{
+  "name": "travel-plan-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Travel Plan Prompt Generator",
+  "main": "",
+  "scripts": {
+    "test": "playwright test"
+  },
+  "dependencies": {
+    "handlebars": "^4.7.8",
+    "jquery": "^3.7.1",
+    "marked": "^4.3.0",
+    "micromodal": "^0.4.10"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.54.2",
+    "http-server": "^14.1.1",
+    "jest": "^29.7.0",
+    "jest-environment-jsdom": "^29.7.0"
+  }
+}

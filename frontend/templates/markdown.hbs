@@ -25,7 +25,9 @@
 {{#if isAiSuggestion}}
 *   **プラン**: この日はAIにおまかせします。宿泊先も考慮して、最高のプランを提案してください。
 {{else}}
+{{#if area}}
 *   **主な活動エリア**: {{area}}
+{{/if}}
 {{#with transport}}
 {{#if type}}
 *   **この日の主な移動**: {{type}} {{name}}（{{depLocation}} {{depTime}}発 → {{arrLocation}} {{arrTime}}着）
