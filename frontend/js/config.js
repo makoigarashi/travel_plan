@@ -39,8 +39,8 @@ const AppConfig = {
     DEBUG_FLAG: false,
 
     // アプリケーションのバージョン情報
-    version: '4.1',
-    appName: '日付自動設定機能追加版',
+    version: '4.2',
+    appName: 'JavaScriptモジュール化改修版',
 
     // フォームのデフォルト値
     defaultValues: {
