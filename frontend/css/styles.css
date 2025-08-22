@@ -1,0 +1,18 @@
+/* Custom styles for modal close button pseudo-elements */
+.modal__close:before, .modal__close:after {
+  position: absolute;
+  content: '';
+  width: 2px;
+  height: 20px;
+  background-color: #333;
+  top: 5px;
+  left: 14px;
+}
+.modal__close:before {
+  transform: rotate(45deg);
+}
+.modal__close:after {
+  transform: rotate(-45deg);
+}
+
+.modal[aria-hidden="true"] { display: none; }

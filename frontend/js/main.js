@@ -37,6 +37,7 @@ $(document).ready(function(){
             // --- 都道府県データ取得とUI初期化 ---
             const prefs = await $.getJSON(`${API_ENDPOINT}?api=prefectures`);
             UI.initialize(prefs);
+            MicroModal.init(); // MicroModalをここで一度だけ初期化
 
             // --- 保存済みデータ復元 ---
             const savedMarkdown = DATA_MANAGER.loadMarkdown();
