@@ -5,18 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>旅行プラン・プロンプトジェネレーター (marked.js版)</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-      .modal__overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.6); display: flex; justify-content: center; align-items: center; z-index: 100; }
-      .modal__container { background-color: #fff; padding: 20px; width: 90%; max-width: 700px; max-height: 90vh; border-radius: 8px; overflow-y: auto; box-shadow: 0 10px 25px rgba(0,0,0,.3); }
-      .modal__header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #ddd; padding-bottom: 15px;}
-      .modal__title { margin: 0; font-size: 1.5rem; font-weight: bold; }
-      .modal__close { background: transparent; border: 0; cursor: pointer; width: 30px; height: 30px; position: relative; }
-      .modal__close:before, .modal__close:after { position: absolute; content: ''; width: 2px; height: 20px; background-color: #333; top: 5px; left: 14px;}
-      .modal__close:before { transform: rotate(45deg); }
-      .modal__close:after { transform: rotate(-45deg); }
-      .modal__content { margin-top: 1.5rem; }
-      .modal[aria-hidden="true"] { display: none; }
-    </style>
+    <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="bg-gray-100 text-gray-800 font-sans p-5">
     <!-- ★★★ テスト実行ボタンをここに追加 ★★★ -->
@@ -36,7 +25,7 @@
         <fieldset id="import-area" class="border border-gray-300 rounded-md p-6 mb-6" style="display:none;">
             <legend class="text-lg font-bold text-blue-600 px-2">プロンプトから入力フォームに反映</legend>
             <label for="import-prompt" class="block mb-2 font-semibold">ここに以前生成したプロンプトを貼り付けてください</label>
-            <textarea id="import-prompt" class="w-full p-2 border border-gray-300 rounded-md min-h-[150px] bg-gray-50 mb-4" placeholder="「# 旅行プランの作成依頼」から始まるテキストを貼り付けます..."></textarea>
+            <textarea id="import-prompt" class="w-full p-2 border border-gray-300 rounded-md min-h-[150px] bg-gray-50 mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="「# 旅行プランの作成依頼」から始まるテキストを貼り付けます..."></textarea>
             <button type="button" class="w-full bg-yellow-400 hover:bg-yellow-500 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors import-button">フォームに反映する</button>
             <p id="import-status" class="text-sm text-gray-500 mt-3 text-center"></p>
         </fieldset>
@@ -49,23 +38,23 @@
             </label>
             <div id="ai-suggestion-inputs" class="mt-4 border-t pt-4" style="display:none;">
                 <label for="arrival-point" class="block mb-2 font-semibold">到着空港・駅</label>
-                <input type="text" id="arrival-point" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：羽田空港, 新千歳空港, 東京駅">
+                <input type="text" id="arrival-point" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：羽田空港, 新千歳空港, 東京駅">
                 <label class="block mb-2 font-semibold">旅行期間</label>
                 <div class="grid grid-cols-2 gap-4 mb-4">
                     <div>
                         <label for="trip-start-date" class="text-sm font-normal">開始日</label>
-                        <input type="date" id="trip-start-date" class="w-full p-2 border border-gray-300 rounded-md">
+                        <input type="date" id="trip-start-date" class="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     <div>
                         <label for="trip-end-date" class="text-sm font-normal">終了日</label>
-                        <input type="date" id="trip-end-date" class="w-full p-2 border border-gray-300 rounded-md">
+                        <input type="date" id="trip-end-date" class="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
                     </div>
                 </div>
 
                 
 
                 <label for="trip-remarks" class="block mb-2 font-semibold">備考・その他の要望</label>
-                <textarea id="trip-remarks" class="w-full p-2 border border-gray-300 rounded-md min-h-[100px]" placeholder="例：往路：新千歳 9:00発 - 羽田 10:35着
+                <textarea id="trip-remarks" class="w-full p-2 border border-gray-300 rounded-md min-h-[100px] focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：往路：新千歳 9:00発 - 羽田 10:35着
 復路：羽田 18:00発 - 新千歳 19:35着
 あまり歩き回りたくないです。"></textarea>            </div>
         </fieldset>
@@ -74,13 +63,13 @@
             <fieldset class="border border-gray-300 rounded-md p-6 mb-6">
                 <legend class="text-lg font-bold text-blue-600 px-2">旅行全体の基本情報</legend>
                 <label for="departure-point" class="block mb-2 font-semibold">出発地</label>
-                <input type="text" id="departure-point" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：札幌、自宅">
+                <input type="text" id="departure-point" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：札幌、自宅">
                 <label for="members" class="block mb-2 font-semibold">メンバー構成・体力レベル</label>
-                <input type="text" id="members" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：30代夫婦、体力に自信あり">
+                <input type="text" id="members" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：30代夫婦、体力に自信あり">
                 <label for="theme" class="block mb-2 font-semibold">旅のテーマ・雰囲気</label>
-                <input type="text" id="theme" class="w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：レトロな街並みを楽しむ">
+                <input type="text" id="theme" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：レトロな街並みを楽しむ">
                 <label for="priority" class="block mb-2 font-semibold">最優先事項</label>
-                <input type="text" id="priority" class="w-full p-2 border border-gray-300 rounded-md" placeholder="例：『〇〇展をじっくり見ること』が最優先">
+                <input type="text" id="priority" class="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：『〇〇展をじっくり見ること』が最優先">
 
                 <!-- 往路・復路情報フォーム -->
                 <div class="mt-6">
@@ -95,34 +84,34 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 p-3 border rounded-md bg-white">
                                     <div>
                                         <label for="outbound-transport-type" class="block text-sm font-medium text-gray-600">種別</label>
-                                        <select id="outbound-transport-type" class="w-full p-2 mt-1 border border-gray-300 rounded-md">
+                                        <select id="outbound-transport-type" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
                                             <option>飛行機</option><option>列車</option><option>バス</option><option>フェリー</option><option>その他</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label for="outbound-transport-name" class="block text-sm font-medium text-gray-600">便名/列車名など</label>
-                                        <input type="text" id="outbound-transport-name" class="w-full p-2 mt-1 border border-gray-300 rounded-md">
+                                        <input type="text" id="outbound-transport-name" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
                                     </div>
                                     <div>
                                         <label for="outbound-dep-location" class="block text-sm font-medium text-gray-600">出発地</label>
-                                        <input type="text" id="outbound-dep-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md">
+                                        <input type="text" id="outbound-dep-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-600">出発時刻</label>
                                         <div class="flex gap-2">
-                                            <select id="outbound-dep-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
-                                            <select id="outbound-dep-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
+                                            <select id="outbound-dep-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                            <select id="outbound-dep-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
                                         </div>
                                     </div>
                                     <div>
                                         <label for="outbound-arr-location" class="block text-sm font-medium text-gray-600">到着地</label>
-                                        <input type="text" id="outbound-arr-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md">
+                                        <input type="text" id="outbound-arr-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-600">到着時刻</label>
                                         <div class="flex gap-2">
-                                            <select id="outbound-arr-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
-                                            <select id="outbound-arr-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
+                                            <select id="outbound-arr-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                            <select id="outbound-arr-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
                                         </div>
                                     </div>
                                 </div>
@@ -134,34 +123,34 @@
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 p-3 border rounded-md bg-white">
                                     <div>
                                         <label for="inbound-transport-type" class="block text-sm font-medium text-gray-600">種別</label>
-                                        <select id="inbound-transport-type" class="w-full p-2 mt-1 border border-gray-300 rounded-md">
+                                        <select id="inbound-transport-type" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
                                             <option>飛行機</option><option>列車</option><option>バス</option><option>フェリー</option><option>その他</option>
                                         </select>
                                     </div>
                                     <div>
                                         <label for="inbound-transport-name" class="block text-sm font-medium text-gray-600">便名/列車名など</label>
-                                        <input type="text" id="inbound-transport-name" class="w-full p-2 mt-1 border border-gray-300 rounded-md">
+                                        <input type="text" id="inbound-transport-name" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
                                     </div>
                                     <div>
                                         <label for="inbound-dep-location" class="block text-sm font-medium text-gray-600">出発地</label>
-                                        <input type="text" id="inbound-dep-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md">
+                                        <input type="text" id="inbound-dep-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-600">出発時刻</label>
                                         <div class="flex gap-2">
-                                            <select id="inbound-dep-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
-                                            <select id="inbound-dep-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
+                                            <select id="inbound-dep-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                            <select id="inbound-dep-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
                                         </div>
                                     </div>
                                     <div>
                                         <label for="inbound-arr-location" class="block text-sm font-medium text-gray-600">到着地</label>
-                                        <input type="text" id="inbound-arr-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md">
+                                        <input type="text" id="inbound-arr-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
                                     </div>
                                     <div>
                                         <label class="block text-sm font-medium text-gray-600">到着時刻</label>
                                         <div class="flex gap-2">
-                                            <select id="inbound-arr-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
-                                            <select id="inbound-arr-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md"></select>
+                                            <select id="inbound-arr-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                            <select id="inbound-arr-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
                                         </div>
                                     </div>
                                 </div>
@@ -176,7 +165,7 @@
             </div>
 
             <div class="text-center my-8">
-                <button type="button" class="bg-cyan-500 hover:bg-cyan-600 text-white font-bold py-3 px-6 rounded-lg transition-colors add-day-btn">旅行日数を追加する</button>
+                <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors add-day-btn">旅行日数を追加する</button>
             </div>
             
             <fieldset id="ai-instruction-fieldset" class="border border-gray-300 rounded-md p-6 mb-6">
@@ -194,7 +183,7 @@
         
         <div id="output-area" style="display:none;">
             <h2 class="text-2xl font-bold text-blue-600 text-center mt-0 pb-2 border-b-2 border-blue-600">生成されたプロンプト</h2>
-            <textarea id="output-markdown" class="w-full p-2 border border-gray-300 rounded-md min-h-[300px] bg-gray-50 mt-6" readonly></textarea>
+            <textarea id="output-markdown" class="w-full p-2 border border-gray-300 rounded-md min-h-[300px] bg-gray-50 mt-6 focus:ring focus:ring-blue-500 focus:border-blue-500" readonly></textarea>
             <p id="markdown-status" class="text-sm text-gray-500 mt-2 text-center"></p>
             <button type="button" class="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors copy-button">クリップボードにコピー</button>
         </div>
@@ -203,13 +192,13 @@
     <!-- Modals and Templates -->
     <!-- 市町村選択モーダル -->
     <div class="modal micromodal-slide" id="modal-city" aria-hidden="true">
-        <div class="modal__overlay" tabindex="-1" data-micromodal-close>
-            <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-city-title">
-                <header class="modal__header">
-                    <h2 class="modal__title" id="modal-city-title">市町村を選択</h2>
-                    <button class="modal__close" aria-label="閉じる" data-micromodal-close></button>
+        <div class="modal__overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" tabindex="-1" data-micromodal-close>
+            <div class="modal__container bg-white p-5 w-11/12 max-w-2xl max-h-[90vh] rounded-lg shadow-xl overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-city-title">
+                <header class="modal__header flex justify-between items-center border-b border-gray-300 pb-4">
+                    <h2 class="modal__title m-0 text-xl font-bold" id="modal-city-title">市町村を選択</h2>
+                    <button class="modal__close bg-transparent border-0 cursor-pointer w-8 h-8 relative" aria-label="閉じる" data-micromodal-close></button>
                 </header>
-                <main class="modal__content" id="modal-city-content">
+                <main class="modal__content mt-6" id="modal-city-content">
                     <!-- 市町村一覧がここに動的に生成されます -->
                 </main>
             </div>
@@ -218,13 +207,13 @@
 
     <!-- Modals and Templates -->
     <div class="modal micromodal-slide" id="modal-prefecture" aria-hidden="true">
-        <div class="modal__overlay" tabindex="-1" data-micromodal-close>
-            <div class="modal__container" role="dialog" aria-modal="true" aria-labelledby="modal-prefecture-title">
-                <header class="modal__header">
-                    <h2 class="modal__title" id="modal-prefecture-title">都道府県を選択</h2>
-                    <button class="modal__close" aria-label="閉じる" data-micromodal-close></button>
+        <div class="modal__overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" tabindex="-1" data-micromodal-close>
+            <div class="modal__container bg-white p-5 w-11/12 max-w-2xl max-h-[90vh] rounded-lg shadow-xl overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-prefecture-title">
+                <header class="modal__header flex justify-between items-center border-b border-gray-300 pb-4">
+                    <h2 class="modal__title m-0 text-xl font-bold" id="modal-prefecture-title">都道府県を選択</h2>
+                    <button class="modal__close bg-transparent border-0 cursor-pointer w-8 h-8 relative" aria-label="閉じる" data-micromodal-close></button>
                 </header>
-                <main class="modal__content" id="modal-prefecture-content"></main>
+                <main class="modal__content mt-6" id="modal-prefecture-content"></main>
             </div>
         </div>
     </div>

@@ -92,7 +92,6 @@ const UI = (function() {
                 regionsGrouped[AppConfig.regions[prefData.regionId].name].push({ name: prefData.name, code: prefCode });
             });
             $('#modal-prefecture-content').html(templates.prefectureList({ regions: regionsGrouped }));
-            MicroModal.init();
         },
 
         initializeCityModal: function(cities) {
