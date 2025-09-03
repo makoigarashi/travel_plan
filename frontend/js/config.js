@@ -39,8 +39,8 @@ const AppConfig = {
     DEBUG_FLAG: false,
 
     // アプリケーションのバージョン情報
-    version: '4.2',
-    appName: 'JavaScriptモジュール化改修版',
+    version: '4.3',
+    appName: 'Gemini連携・プロンプト改善版',
 
     // フォームのデフォルト値
     defaultValues: {

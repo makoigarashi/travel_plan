@@ -4,6 +4,7 @@
   "description": "A proxy for GSI API on Cloud Run.",
   "main": "index.js",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "axios": "1.6.8",
     "cors": "2.8.5",
     "express": "4.19.2"

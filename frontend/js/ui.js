@@ -11,6 +11,8 @@ const UI = (function() {
     // --- Private Functions ---
 
     function setupTimeSelects($hourSelect, $minuteSelect) {
+        $hourSelect.append('<option value="">--</option>');
+        $minuteSelect.append('<option value="">--</option>');
         for (let i = 0; i < 24; i++) {
             $hourSelect.append(`<option value="${String(i).padStart(2, '0')}">${String(i).padStart(2, '0')}</option>`);
         }
@@ -172,6 +174,10 @@ const UI = (function() {
             }
 
             $('#days-container').append($newDay);
+            // 1日目の場合のみ「日帰り」オプションを表示
+            if ($newDay.data('day') === 1) {
+                $newDay.find('.day-trip-option').show();
+            }
             publicMethods.updateEventButtonState($newDay);
         },
 
@@ -249,6 +255,48 @@ const UI = (function() {
 
         showStatusMessage: function(message) {
             $('#save-status').text(message).fadeIn().delay(3000).fadeOut();
+        },
+
+        /**
+         * Gemini実行ボタンの有効/無効状態を更新します。
+         * @param {boolean} enabled - ボタンを有効にする場合はtrue。
+         */
+        updateGeminiButtonState: function(enabled) {
+            $('#execute-gemini-btn').prop('disabled', !enabled);
+        },
+
+        /**
+         * Geminiからの応答を表示エリアにレンダリングします。
+         * @param {string} [content] - 表示するMarkdownコンテンツ。
+         * @param {object} [options] - 表示オプション。
+         * @param {boolean} [options.isLoading] - ロード中表示にするか。
+         * @param {string} [options.error] - 表示するエラーメッセージ。
+         */
+        displayGeminiResponse: function(content, { isLoading = false, error = null } = {}) {
+            const $responseArea = $('#gemini-response-area');
+            const $responseContent = $('#gemini-response-content');
+
+            $responseArea.slideDown();
+
+            if (isLoading) {
+                $responseContent.html('<p class="text-gray-500">Geminiからの応答を待っています...</p>');
+                return;
+            }
+            
+            if (error) {
+                // エラーメッセージはXSS対策のためテキストとして扱う
+                const escapedError = $('<div>').text(error).html();
+                $responseContent.html(`<p class="text-red-500"><strong>エラー:</strong> ${escapedError}</p>`);
+                return;
+            }
+
+            if (content) {
+                // marked.jsを使ってMarkdownをHTMLに変換して表示
+                $responseContent.html(marked.parse(content));
+            } else {
+                $responseArea.slideUp();
+                $responseContent.empty();
+            }
         },
 
         getPrefectures: () => prefectures,

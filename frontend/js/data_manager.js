@@ -23,58 +23,81 @@ const DATA_MANAGER = (function() {
      * @returns {object} 現在のフォームデータを格納したオブジェクト。
      */
     function getCurrentFormData() {
-        const data = { general: { transport: {} }, days: [] };
-
-        data.general.departure = $('#departure-point').val();
-        data.general.members = $('#members').val();
-        data.general.theme = $('#theme').val() || $('#theme').attr('placeholder');
-        data.general.priority = $('#priority').val() || $('#priority').attr('placeholder');
-
-        data.general.transport.outbound = {
-            type: $('#outbound-transport-type').val(),
-            name: $('#outbound-transport-name').val(),
-            depLocation: $('#outbound-dep-location').val(),
-            depTime: getTimeFromSelects($('#outbound-dep-hour'), $('#outbound-dep-minute')),
-            arrLocation: $('#outbound-arr-location').val(),
-            arrTime: getTimeFromSelects($('#outbound-arr-hour'), $('#outbound-arr-minute')),
-        };
-        data.general.transport.inbound = {
-            type: $('#inbound-transport-type').val(),
-            name: $('#inbound-transport-name').val(),
-            depLocation: $('#inbound-dep-location').val(),
-            depTime: getTimeFromSelects($('#inbound-dep-hour'), $('#inbound-dep-minute')),
-            arrLocation: $('#inbound-arr-location').val(),
-            arrTime: getTimeFromSelects($('#inbound-arr-hour'), $('#inbound-arr-minute')),
+        const data = {
+            general: {
+                departure: $('#departure-point').val(),
+                members: $('#members').val(),
+                theme: $('#theme').val() || $('#theme').attr('placeholder'),
+                priority: $('#priority').val() || $('#priority').attr('placeholder'),
+                transport: {} // Initialize as empty
+            },
+            days: []
         };
 
-        $('.day-plan').each(function(){
+        // --- General Transport ---
+        const outboundName = $('#outbound-transport-name').val().trim();
+        const outboundDep = $('#outbound-dep-location').val().trim();
+        const outboundArr = $('#outbound-arr-location').val().trim();
+
+        if (outboundName || outboundDep || outboundArr) {
+            data.general.transport.outbound = {
+                type: $('#outbound-transport-type').val(),
+                name: outboundName,
+                depLocation: outboundDep,
+                depTime: getTimeFromSelects($('#outbound-dep-hour'), $('#outbound-dep-minute')),
+                arrLocation: outboundArr,
+                arrTime: getTimeFromSelects($('#outbound-arr-hour'), $('#outbound-arr-minute')),
+            };
+        }
+
+        const inboundName = $('#inbound-transport-name').val().trim();
+        const inboundDep = $('#inbound-dep-location').val().trim();
+        const inboundArr = $('#inbound-arr-location').val().trim();
+
+        if (inboundName || inboundDep || inboundArr) {
+            data.general.transport.inbound = {
+                type: $('#inbound-transport-type').val(),
+                name: inboundName,
+                depLocation: inboundDep,
+                depTime: getTimeFromSelects($('#inbound-dep-hour'), $('#inbound-dep-minute')),
+                arrLocation: inboundArr,
+                arrTime: getTimeFromSelects($('#inbound-arr-hour'), $('#inbound-arr-minute')),
+            };
+        }
+
+        // --- Days Data ---
+        $('.day-plan').each(function() {
             const $dayDiv = $(this);
-            const dayTransportType = $dayDiv.find('.day-transport-type').val();
             const dayData = {
                 isAiSuggestion: $dayDiv.find('.day-ai-suggestion-mode').is(':checked'),
                 date: $dayDiv.find('.travel-date').val(),
                 prefCode: $dayDiv.find('.open-prefecture-modal-btn').data('pref-code'),
                 area: $dayDiv.find('.open-prefecture-modal-btn').text(),
                 city: $dayDiv.find('.open-city-modal-btn').data('city-name'),
-                accommodation: $dayDiv.find('.accommodation').val(),
+                accommodation: $dayDiv.find('.day-is-day-trip').is(':checked') ? '' : $dayDiv.find('.accommodation').val(),
+                isDayTrip: $dayDiv.find('.day-is-day-trip').is(':checked'), // 日帰りフラグを追加
                 transport: {}, // Initialize as empty
                 places: [],
                 doEat: $dayDiv.find('.must-do-eat').val().trim().split('\n').filter(Boolean),
                 notes: $dayDiv.find('.day-specific-notes').val().trim().split('\n').filter(Boolean)
             };
 
-            if (dayTransportType) {
+            const dayTransportName = $dayDiv.find('.day-transport-name').val().trim();
+            const dayTransportDep = $dayDiv.find('.day-transport-dep-location').val().trim();
+            const dayTransportArr = $dayDiv.find('.day-transport-arr-location').val().trim();
+
+            if (dayTransportName || dayTransportDep || dayTransportArr) {
                 dayData.transport = {
-                    type: dayTransportType,
-                    name: $dayDiv.find('.day-transport-name').val(),
-                    depLocation: $dayDiv.find('.day-transport-dep-location').val(),
+                    type: $dayDiv.find('.day-transport-type').val(),
+                    name: dayTransportName,
+                    depLocation: dayTransportDep,
                     depTime: getTimeFromSelects($dayDiv.find('.day-transport-dep-hour'), $dayDiv.find('.day-transport-dep-minute')),
-                    arrLocation: $dayDiv.find('.day-transport-arr-location').val(),
+                    arrLocation: dayTransportArr,
                     arrTime: getTimeFromSelects($dayDiv.find('.day-transport-arr-hour'), $dayDiv.find('.day-transport-arr-minute')),
                 };
             }
 
-            $dayDiv.find('.places-container .dynamic-input-group').each(function(){
+            $dayDiv.find('.places-container .dynamic-input-group').each(function() {
                 const name = $(this).find('.place-name').val().trim();
                 const url = $(this).find('.place-url').val().trim();
                 if (name) dayData.places.push({ name: name, url: url });
@@ -83,7 +106,7 @@ const DATA_MANAGER = (function() {
             data.days.push(dayData);
         });
 
-        console.log('DATA_MANAGER: Collected form data:', data); // デバッグログ追加
+        console.log('DATA_MANAGER: Collected form data:', data);
         return data;
     }
 

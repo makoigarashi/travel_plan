@@ -22,7 +22,11 @@
 
 {{#each days}}
 ### {{dayNumber}}日目（{{date}}・{{dayOfWeek}}）
+{{#unless isDayTrip}}
+{{#if accommodation}}
 *   **宿泊先／最終目的地**: {{accommodation}}
+{{/if}}
+{{/unless}}
 {{#if isAiSuggestion}}
 *   **プラン**: この日はAIにおまかせします。宿泊先も考慮して、最高のプランを提案してください。
 {{else}}

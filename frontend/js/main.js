@@ -142,6 +142,15 @@ $(document).ready(function(){
             })
             .on('change', '.travel-date', function() { UI.updateEventButtonState($(this).closest('.day-plan')); })
             .on('click', '.search-events-btn', handleSearchEvents)
+            .on('change', '.day-is-day-trip', function() { // ★ 追加
+                const $checkbox = $(this);
+                const $accommodationInput = $checkbox.closest('.day-plan').find('.accommodation');
+                if ($checkbox.is(':checked')) {
+                    $accommodationInput.val('').prop('disabled', true).addClass('bg-gray-200');
+                } else {
+                    $accommodationInput.prop('disabled', false).removeClass('bg-gray-200');
+                }
+            });
 
         $('#modal-prefecture-content').on('click', '.prefecture-select-btn', handlePrefectureSelect);
         $('#modal-city-content').on('click', '.city-select-btn', handleCitySelect);
@@ -149,6 +158,7 @@ $(document).ready(function(){
         $('.import-button').on('click', handleImport);
         $('.generate-btn').on('click', handleGenerateMarkdown);
         $('.copy-button').on('click', handleCopyMarkdown);
+        $('#execute-gemini-btn').on('click', handleExecuteGemini); // ★ 追加
         
     }
 
@@ -296,6 +306,10 @@ $(document).ready(function(){
         $outputTextarea.val(markdown);
         $('#output-area').slideDown();
         $outputTextarea.css('height', 'auto').css('height', $outputTextarea.prop('scrollHeight') + 'px');
+
+        // Gemini実行ボタンを有効化し、前の結果をクリア
+        UI.updateGeminiButtonState(true);
+        UI.displayGeminiResponse(null);
     }
 
     /**
@@ -306,6 +320,45 @@ $(document).ready(function(){
          textarea.select();
          document.execCommand('copy');
          alert('プロンプトをクリップボードにコピーしました！');
+    }
+
+    /**
+     * 生成されたプロンプトをGemini APIに送信し、結果を表示します。
+     */
+    function handleExecuteGemini() {
+        const prompt = $('#output-markdown').val();
+        if (!prompt) {
+            alert('プロンプトがありません。');
+            return;
+        }
+
+        // ボタンを無効化し、ローディング表示
+        UI.updateGeminiButtonState(false);
+        UI.displayGeminiResponse(null, { isLoading: true });
+
+        API_CLIENT.executeGemini(prompt)
+            .done(function(response) {
+                // 成功時：結果を整形して表示
+                if (response && response.text) {
+                    UI.displayGeminiResponse(response.text);
+                } else {
+                    UI.displayGeminiResponse(null, { error: 'Geminiから予期しない形式の応答がありました。' });
+                }
+            })
+            .fail(function(jqXHR) {
+                // 失敗時：エラーメッセージを表示
+                let errorMessage = '不明なエラーが発生しました。';
+                if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
+                    errorMessage = jqXHR.responseJSON.error;
+                } else if (jqXHR.statusText) {
+                    errorMessage = jqXHR.statusText;
+                }
+                UI.displayGeminiResponse(null, { error: errorMessage });
+            })
+            .always(function() {
+                // 完了時：ボタンを再度有効化
+                UI.updateGeminiButtonState(true);
+            });
     }
 
     // Initialize the application
