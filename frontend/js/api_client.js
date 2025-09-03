@@ -23,8 +23,23 @@ const API_CLIENT = (function() {
         return $.getJSON(`${API_ENDPOINT}?api=cities&prefCode=${prefCode}`);
     }
 
+    /**
+     * 指定されたプロンプトをGemini APIに送信して結果を取得します。
+     * @param {string} prompt - Geminiに送信するプロンプト文字列。
+     * @returns {Promise<object>} Gemini APIからのレスポンスを含むPromise。
+     */
+    function executeGemini(prompt) {
+        return $.ajax({
+            url: `${API_ENDPOINT}?api=gemini`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ prompt: prompt })
+        });
+    }
+
     return {
         getPrefectures: getPrefectures,
-        getCities: getCities
+        getCities: getCities,
+        executeGemini: executeGemini
     };
 })();
