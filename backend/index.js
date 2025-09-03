@@ -9,10 +9,17 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+
 const app = express();
 const PORT = process.env.PORT || 8080;
 
 const MLIT_API_KEY = process.env.MLIT_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+
+// Gemini APIクライアントの初期化
+const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
+const geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest'});
 
 // -----------------------------------------------
 // データ読み込み
@@ -30,6 +37,8 @@ try {
 
 // CORSミドルウェア
 app.use(cors());
+// JSONパーサーミドルウェア
+app.use(express.json());
 
 // -----------------------------------------------
 // リクエストハンドラ関数
@@ -89,20 +98,49 @@ async function handleGetCities(req, res) {
     }
 }
 
+/**
+ * Gemini APIにプロンプトを送信し、結果を返します。
+ * @param {object} req - Expressリクエストオブジェクト。
+ * @param {object} res - Expressレスポンスオブジェクト。
+ */
+async function handleGeminiExecute(req, res) {
+    const { prompt } = req.body;
+
+    if (!prompt) {
+        return res.status(400).json({ error: 'Prompt is required.' });
+    }
+
+    const result = await geminiModel.generateContent(prompt);
+    const response = await result.response;
+    const text = response.text();
+    
+    res.status(200).json({ text });
+}
+
 // -----------------------------------------------
 // メインのAPIルート
 // -----------------------------------------------
-app.get('/', async (req, res, next) => {
+app.use('/', async (req, res, next) => { // GETとPOST両方を受け付けるためにapp.useに変更
     try {
         const { api: apiType } = req.query;
 
-        if (apiType === 'prefectures') {
-            return handleGetPrefectures(req, res);
+        // POSTリクエストの処理 (Gemini実行)
+        if (req.method === 'POST' && apiType === 'gemini') {
+            return await handleGeminiExecute(req, res);
         }
-        if (apiType === 'cities') {
-            return await handleGetCities(req, res);
+
+        // GETリクエストの処理
+        if (req.method === 'GET') {
+            if (apiType === 'prefectures') {
+                return handleGetPrefectures(req, res);
+            }
+            if (apiType === 'cities') {
+                return await handleGetCities(req, res);
+            }
         }
-        return res.status(400).json({ error: 'Invalid API type specified.' });
+        
+        // 一致するルートがない場合
+        return res.status(400).json({ error: 'Invalid API type or method specified.' });
 
     } catch (error) {
         next(error); // エラーを専用ミドルウェアに渡す
@@ -133,6 +171,10 @@ app.use((error, req, res, next) => {
 function startServer() {
     if (!MLIT_API_KEY) {
         console.error('FATAL ERROR: MLIT_API_KEY environment variable is not set. Server will not start.');
+        process.exit(1);
+    }
+    if (!GEMINI_API_KEY) {
+        console.error('FATAL ERROR: GEMINI_API_KEY environment variable is not set. Server will not start.');
         process.exit(1);
     }
     app.listen(PORT, () => {

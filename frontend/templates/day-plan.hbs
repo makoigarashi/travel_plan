@@ -13,8 +13,18 @@
               </label>
             </div>
 
-            <label class="block mb-2 font-semibold">宿泊先／最終目的地</label>
-            <input type="text" class="accommodation w-full p-2 border border-gray-300 rounded-md mb-4" placeholder="例：ホテル、空港など">
+            <div class="flex items-center mb-4">
+                <div class="flex-grow">
+                    <label class="block mb-2 font-semibold">宿泊先／最終目的地</label>
+                    <input type="text" class="accommodation w-full p-2 border border-gray-300 rounded-md" placeholder="例：ホテル、空港など">
+                </div>
+                <div class="ml-4 pt-8 day-trip-option" style="display:none;">
+                    <label class="flex items-center font-normal cursor-pointer whitespace-nowrap">
+                        <input type="checkbox" class="day-is-day-trip mr-2 h-4 w-4">
+                        日帰り
+                    </label>
+                </div>
+            </div>
 
             <div class="day-manual-inputs">
                 <label class="block mb-2 font-semibold">日付</label>
