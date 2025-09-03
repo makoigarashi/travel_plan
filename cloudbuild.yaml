@@ -15,8 +15,7 @@ steps:
     - '--platform'
     - 'managed'
     - '--allow-unauthenticated'
-    - '--set-env-vars'
-    - 'MLIT_API_KEY=${_MLIT_API_KEY}' # ★機密情報は、ここから安全に渡します
+        - '--update-secrets=MLIT_API_KEY=mlit-api-key:latest,GEMINI_API_KEY=gemini-api-key:latest'
 
 # -----------------------------------------------
 # Step 2: フロントエンド (GCS) のデプロイ
@@ -42,5 +41,3 @@ steps:
 options:
   logging: CLOUD_LOGGING_ONLY
 
-substitutions:
-  _MLIT_API_KEY: 'DCFKdtWrE6tTRaZwSI0HACChBmD3PxJP' # ★ここにAPIキーを設定（後述）
