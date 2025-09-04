@@ -16,9 +16,20 @@
 
 *   `frontend/`: ブラウザで動作する全てのファイルを格納します。
     *   `index.html`: アプリケーションの骨格となるHTMLファイルです。
-    *   `js/*.js`: 機能ごとに分割されたJavaScriptファイル群です。`main.js`が全体を制御し、`ui.js`や`data_manager.js`などが各機能を担当します。
-    *   `templates/*.hbs`: UIを動的に生成するためのHTMLテンプレート群です。
-    *   `test_js/*.js`: シナリオテストに関連するファイル群です。
+    *   `css/styles.css`: アプリケーションのカスタムスタイルシートです。
+    *   `js/`: 機能ごとに分割されたJavaScriptファイル群です。
+        *   `main.js`: 全体を制御する司令塔の役割を果たします。
+        *   `ui.js`: DOM操作やUIの更新など、UI関連の処理を担当します。
+        *   `data_manager.js`: データの取得や保存など、状態管理を担当します。
+        *   `api_client.js`: バックエンドAPIとの通信を担当します。
+        *   `markdown_generator.js`: 入力データからMarkdownを生成します。
+        *   `markdown_parser.js`: Markdownを解析してフォームに反映します。
+        *   `config.js`: アプリケーション全体の設定情報を管理します。
+    *   `templates/`: UIを動的に生成するためのHandlebars.js用テンプレート群です。
+    *   `test_js/`: PlaywrightによるE2Eテストのシナリオを格納します。
+        *   `travel_plan.spec.mjs`: 具体的なテストケースを記述します。
+    *   `package.json`: フロントエンドの依存関係（Playwrightなど）を定義します。
+    *   `playwright.config.js`: Playwrightのテスト設定ファイルです。
 *   `backend/`: Cloud Run上で動作するAPIプロキシサーバーのファイルを格納します。
     *   `index.js`: サーバーのメインロジックです。
     *   `package.json`: プロジェクトの依存関係を定義します。
