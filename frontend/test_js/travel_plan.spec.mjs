@@ -205,3 +205,26 @@ test('[UI] 日帰りチェックボックスの挙動', async ({ page }) => {
   const generatedMarkdown = await page.locator('#output-markdown').inputValue();
   await expect(generatedMarkdown).not.toContain('宿泊先／最終目的地');
 });
+
+test('[UI] Gemini API連携テスト', async ({ page }) => {
+  // 1. テスト用のAPIリクエストをモック
+  await page.route('http://localhost:8080/?api=gemini', async route => {
+    const mockResponse = { text: 'Geminiからの応答メッセージです。' };
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockResponse) });
+  });
+
+  // 2. 何か入力してMarkdownを生成
+  await page.locator('#departure-point').fill('テスト出発地');
+  await page.locator('.generate-btn').click();
+
+  // 3. Markdownが生成され、Gemini実行ボタンが有効になるのを待つ
+  await expect(page.locator('#output-markdown')).not.toBeEmpty();
+  await expect(page.locator('#execute-gemini-btn')).toBeEnabled();
+
+  // 4. Gemini実行ボタンをクリック
+  await page.locator('#execute-gemini-btn').click();
+
+  // 5. 最終的に正しい応答がpタグとしてレンダリングされるのを直接待つ
+  //    ローディングのような中間状態をテストすると不安定になることがあるため、最終結果のみを検証します。
+  await expect(page.locator('#gemini-response-content p')).toHaveText('Geminiからの応答メッセージです。');
+});
