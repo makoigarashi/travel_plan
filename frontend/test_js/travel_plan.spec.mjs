@@ -172,3 +172,36 @@ test('[UI] 日ごとのAIおまかせモードの生成と復元', async ({ page
   await expect(page.locator('.day-plan:last-child .accommodation')).toHaveValue('ホテルB');
   await expect(page.locator('.day-plan:last-child .day-manual-inputs')).not.toBeVisible();
 });
+
+test('[UI] 日帰りチェックボックスの挙動', async ({ page }) => {
+  // 1. 1日目にのみチェックボックスが表示されることを確認
+  await expect(page.locator('.day-plan:first-child .day-trip-option')).toBeVisible();
+
+  // 2. 2日目を追加し、そこにはチェックボックスがないことを確認
+  await page.locator('.add-day-btn').click();
+  await expect(page.locator('.day-plan:last-child .day-trip-option')).not.toBeVisible();
+
+  // 3. 1日目のチェックボックスをオンにする
+  const day1 = page.locator('.day-plan:first-child');
+  const dayTripCheckbox = day1.locator('.day-is-day-trip');
+  const accommodationInput = day1.locator('.accommodation');
+
+  await accommodationInput.fill('テストホテル'); // 事前に値を入力
+  await dayTripCheckbox.check();
+
+  // 4. 宿泊先入力欄が無効化され、値がクリアされることを確認
+  await expect(accommodationInput).toBeDisabled();
+  await expect(accommodationInput).toHaveValue('');
+
+  // 5. チェックボックスをオフにする
+  await dayTripCheckbox.uncheck();
+  await expect(accommodationInput).toBeEnabled();
+
+  // 6. 日帰りチェックを入れた状態でMarkdownを生成
+  await dayTripCheckbox.check();
+  await page.locator('.generate-btn').click();
+
+  // 7. Markdownに「宿泊先」が含まれないことを確認
+  const generatedMarkdown = await page.locator('#output-markdown').inputValue();
+  await expect(generatedMarkdown).not.toContain('宿泊先／最終目的地');
+});
