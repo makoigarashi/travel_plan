@@ -116,3 +116,4 @@ AI(LLM)に旅行プランの作成を依頼するための、詳細な指示（�
 
 *   **フロントエンド:** `frontend`ディレクトリの内容がGoogle Cloud Storageに同期されます。
 *   **バックエンド:** `backend`ディレクトリの内容がコンテナ化され、Google Cloud Runにデプロイされます。
+    *   **Firestore連携のための設定:** Cloud Runサービスの設定画面で、環境変数 `GOOGLE_CLOUD_PROJECT` にご自身のGoogle CloudプロジェクトIDを設定してください。これにより、本番環境でFirestoreが有効になります。
