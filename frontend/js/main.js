@@ -9,10 +9,9 @@
 // DATA_MANAGERやUIに必要な指示を出します。
 // =============================================
 $(document).ready(function(){
-    const API_ENDPOINT = AppConfig.API_ENDPOINT;
     let currentPrefButton = null;
     let currentCityButton = null;
-    let currentThemeButton = null; // ★ 追加
+    let currentThemeButton = null;
 
     /**
      * アプリケーションを初期化します。
@@ -20,15 +19,31 @@ $(document).ready(function(){
      */
     async function initialize() {
         try {
+            // --- 設定保存後のリロードかどうかのフラグを確認 ---
+            const settingsSaved = sessionStorage.getItem('settings_saved');
+            sessionStorage.removeItem('settings_saved'); // フラグは一度使ったら消す
+
+            // --- 最初に設定をサーバーから読み込む ---
+            try {
+                const settings = await API_CLIENT.getSettings();
+                if (settings.defaultValues) {
+                    AppConfig.defaultValues = settings.defaultValues;
+                    console.log('Loaded default values from server:', AppConfig.defaultValues);
+                }
+                if (settings.themes) {
+                    AppConfig.themes = settings.themes;
+                    console.log('Loaded themes from server:', AppConfig.themes);
+                }
+            } catch (error) {
+                console.warn('Could not load settings from server. Using local defaults.', error);
+            }
+
             // --- テンプレート読み込み ---
             await UI.loadTemplates();
             MARKDOWN_GENERATOR.initialize(UI.getTemplates());
 
-            // --- 初期値設定 ---
-            $('#departure-point').val(AppConfig.defaultValues.departure);
-            $('#members').val(AppConfig.defaultValues.members);
-            $('#theme').attr('placeholder', AppConfig.defaultValues.theme);
-            $('#priority').attr('placeholder', AppConfig.defaultValues.priority);
+            // --- UI初期化 (設定反映後) ---
+            UI.applyInitialSettings();
             const randomPrefix = AppConfig.prefixes[Math.floor(Math.random() * AppConfig.prefixes.length)];
             $('#version-info').text(`${randomPrefix}${AppConfig.appName} (Ver. ${AppConfig.version})`);
 
@@ -36,13 +51,14 @@ $(document).ready(function(){
             setupEventHandlers();
 
             // --- 都道府県データ取得とUI初期化 ---
-            const prefs = await $.getJSON(`${API_ENDPOINT}?api=prefectures`);
+            const prefs = await API_CLIENT.getPrefectures();
             UI.initialize(prefs);
-            MicroModal.init(); // MicroModalをここで一度だけ初期化
+            UI.initializeSettingsModal(AppConfig);
+            MicroModal.init({ onClose: () => UI.updateThemeModalButtonStates() });
 
-            // --- 保存済みデータ復元 ---
+            // --- 保存済みデータ復元ロジックの修正 ---
             const savedMarkdown = DATA_MANAGER.loadMarkdown();
-            if (savedMarkdown) {
+            if (savedMarkdown && !settingsSaved) { // 設定保存直後でない場合のみ復元を試みる
                 if (confirm('以前保存したプランが見つかりました。復元しますか？\n（キャンセルするとデータは削除されます）')) {
                     const data = MARKDOWN_PARSER.parse(savedMarkdown);
                     if (data) {
@@ -52,14 +68,14 @@ $(document).ready(function(){
                 } else {
                     DATA_MANAGER.deleteMarkdown();
                     UI.showStatusMessage('保存されていたプランを削除しました。');
-                    UI.addDay(); // 新しい日を追加
+                    UI.addDay();
                 }
             } else {
-                UI.addDay(); // 新規作成の場合も最初の日を追加
+                UI.addDay();
             }
 
             // --- 初期表示調整 ---
-            $('#ai-suggestion-mode').trigger('change');
+            updateViewForPlanMode($('#ai-suggestion-mode').is(':checked'));
 
         } catch (error) {
             console.error("Initialization failed:", error);
@@ -68,11 +84,39 @@ $(document).ready(function(){
     }
 
     /**
+     * プランニングモードに応じてUIの表示/非表示を切り替える専用関数
+     * @param {boolean} isSuggestionMode - AI提案モードが有効かどうか
+     */
+    function updateViewForPlanMode(isSuggestionMode) {
+        const $normalModeElements = $('#prompt-form > fieldset:not(:first-of-type):not(#ai-instruction-fieldset), #days-container, .add-day-btn');
+        const $suggestionModeElements = $('#ai-suggestion-inputs');
+
+        if (isSuggestionMode) {
+            $suggestionModeElements.show();
+            $normalModeElements.hide();
+        } else {
+            $suggestionModeElements.hide();
+            $normalModeElements.show();
+        }
+    }
+
+    /**
+     * AI提案モードのチェックボックス変更イベントを処理します。
+     */
+    function handleSuggestionModeChange() {
+        updateViewForPlanMode($(this).is(':checked'));
+    }
+
+    /**
      * アプリケーションのすべてのイベントハンドラを設定します。
      */
     function setupEventHandlers() {
-        // (イベントハンドラのコードは変更なし)
-        
+        // --- 設定関連 ---
+        $('#open-settings-modal-btn').on('click', () => MicroModal.show('modal-settings'));
+        $('#save-settings-btn').on('click', handleSaveSettings);
+
+        // --- その他 ---
+        $('#ai-suggestion-mode').on('change', handleSuggestionModeChange);
         $('.add-day-btn').on('click', () => {
             const $lastDay = $('.day-plan:last');
             let nextDate = '';
@@ -82,30 +126,25 @@ $(document).ready(function(){
                 const lastDateVal = $lastDay.find('.travel-date').val();
                 if (lastDateVal) {
                     try {
-                        // UTCで日付を解釈して、タイムゾーン問題を回避する
                         const lastDate = new Date(lastDateVal + 'T00:00:00');
                         lastDate.setDate(lastDate.getDate() + 1);
-                        
                         const year = lastDate.getFullYear();
                         const month = String(lastDate.getMonth() + 1).padStart(2, '0');
                         const day = String(lastDate.getDate()).padStart(2, '0');
-                        
                         nextDate = `${year}-${month}-${day}`;
                     } catch (e) {
                         console.error("日付の計算中にエラーが発生しました:", e);
-                        nextDate = ''; // エラー時は空にする
+                        nextDate = '';
                     }
                 }
-
-                // 前の日の「主な活動エリア」情報を取得
                 prevDayData.prefCode = $lastDay.find('.open-prefecture-modal-btn').data('pref-code');
-                prevDayData.area = $lastDay.find('.open-prefecture-modal-btn').text(); // 都道府県名
-                prevDayData.city = $lastDay.find('.open-city-modal-btn').data('city-name'); // 市町村名
+                prevDayData.area = $lastDay.find('.open-prefecture-modal-btn').text();
+                prevDayData.city = $lastDay.find('.open-city-modal-btn').data('city-name');
             }
             
             UI.addDay({ date: nextDate, ...prevDayData });
         });
-        $('.toggle-import-btn').on('click', () => $('#import-area').slideToggle());
+        $('.toggle-import-btn').on('click', () => $('#import-area').toggle());
         $('#days-container')
             .on('click', '.open-prefecture-modal-btn', function() {
                 currentPrefButton = $(this);
@@ -118,8 +157,9 @@ $(document).ready(function(){
                     if (prefCode) loadCityModal(prefCode);
                 }
             })
-            .on('click', '.open-theme-modal-btn', function() { // ★ 追加
+            .on('click', '.open-theme-modal-btn', function() {
                 currentThemeButton = $(this);
+                UI.updateThemeModalButtonStates($(this));
                 MicroModal.show('modal-theme');
             })
             .on('click', '.remove-day-btn', function(){
@@ -139,15 +179,11 @@ $(document).ready(function(){
                 const $checkbox = $(this);
                 const $dayPlan = $checkbox.closest('.day-plan');
                 const $manualInputs = $dayPlan.find('.day-manual-inputs');
-                if ($checkbox.is(':checked')) {
-                    $manualInputs.slideUp();
-                } else {
-                    $manualInputs.slideDown();
-                }
+                $manualInputs.slideToggle(!$checkbox.is(':checked'));
             })
             .on('change', '.travel-date', function() { UI.updateEventButtonState($(this).closest('.day-plan')); })
             .on('click', '.search-events-btn', handleSearchEvents)
-            .on('change', '.day-is-day-trip', function() { // ★ 追加
+            .on('change', '.day-is-day-trip', function() {
                 const $checkbox = $(this);
                 const $accommodationInput = $checkbox.closest('.day-plan').find('.accommodation');
                 if ($checkbox.is(':checked')) {
@@ -159,18 +195,32 @@ $(document).ready(function(){
 
         $('#modal-prefecture-content').on('click', '.prefecture-select-btn', handlePrefectureSelect);
         $('#modal-city-content').on('click', '.city-select-btn', handleCitySelect);
-        $('#modal-theme-content').on('click', '.theme-select-btn', handleThemeSelect); // ★ 追加
-        $('#ai-suggestion-mode').on('change', handleSuggestionModeChange);
+        $('#modal-theme-content').on('click', '.theme-select-btn', handleThemeSelect);
         $('.import-button').on('click', handleImport);
         $('.generate-btn').on('click', handleGenerateMarkdown);
         $('.copy-button').on('click', handleCopyMarkdown);
-        $('#execute-gemini-btn').on('click', handleExecuteGemini); // ★ 追加
-        
+        $('#execute-gemini-btn').on('click', handleExecuteGemini);
     }
 
     /**
-     * Walker+でイベントを検索するイベントを処理します。
+     * 設定を保存するイベントを処理します。
      */
+    async function handleSaveSettings() {
+        try {
+            const settingsToSave = UI.getSettingsFromModal();
+            await API_CLIENT.saveSettings(settingsToSave);
+            
+            sessionStorage.setItem('settings_saved', 'true');
+
+            MicroModal.close('modal-settings');
+            alert('設定を保存しました。ページをリロードして反映します。');
+            location.reload();
+        } catch (error) {
+            console.error('Failed to save settings:', error);
+            alert('設定の保存に失敗しました。コンソールを確認してください。');
+        }
+    }
+
     function handleSearchEvents() {
         const $dayDiv = $(this).closest('.day-plan');
         const dateVal = $dayDiv.find('.travel-date').val();
@@ -187,14 +237,10 @@ $(document).ready(function(){
         window.open(targetUrl, '_blank');
     }
 
-    /**
-     * 市町村モーダルを読み込んで表示します。
-     * @param {string} prefCode - 都道府県コード。
-     */
     function loadCityModal(prefCode) {
         $('#modal-city-content').html('<div class="text-center p-4">読み込み中...</div>');
         MicroModal.show('modal-city');
-        $.getJSON(`${API_ENDPOINT}?api=cities&prefCode=${prefCode}`)
+        API_CLIENT.getCities(prefCode)
             .done(data => {
                 if (data && Array.isArray(data)) UI.initializeCityModal(data);
                 else $('#modal-city-content').html('<div class="text-center p-4 text-red-500">データの取得に失敗しました</div>');
@@ -202,9 +248,6 @@ $(document).ready(function(){
             .fail(() => $('#modal-city-content').html('<div class="text-center p-4 text-red-500">データの取得に失敗しました</div>'));
     }
 
-    /**
-     * モーダルからの都道府県の選択を処理します。
-     */
     function handlePrefectureSelect() {
         if (currentPrefButton) {
             const prefCode = $(this).data('pref-code');
@@ -218,9 +261,6 @@ $(document).ready(function(){
         }
     }
     
-    /**
-     * モーダルからの市町村の選択を処理します。
-     */
     function handleCitySelect() {
         if (currentCityButton) {
             const cityName = $(this).data('city-name');
@@ -229,28 +269,17 @@ $(document).ready(function(){
         }
     }
 
-    /**
-     * モーダルからのテーマ選択を処理します。
-     */
     function handleThemeSelect() {
         if (!currentThemeButton) return;
-
         const $button = $(this);
         const themeId = $button.data('theme-id');
         const themeName = $button.data('theme-name');
         const $themesContainer = currentThemeButton.closest('.day-plan').find('.selected-themes-container');
-
-        // 選択状態をトグル
         $button.toggleClass('bg-green-200 border-green-600');
-
-        // コンテナ内の既存のテーマを確認
         const $existingTheme = $themesContainer.find(`.theme-badge[data-theme-id="${themeId}"]`);
-
         if ($existingTheme.length) {
-            // 存在すれば削除
             $existingTheme.remove();
         } else {
-            // 存在しなければ追加
             const badgeHtml = `
                 <span class="theme-badge inline-flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full" data-theme-id="${themeId}">
                     ${themeName}
@@ -260,23 +289,6 @@ $(document).ready(function(){
         }
     }
 
-    /**
-     * AI提案モードのチェックボックスの変更イベントを処理します。
-     */
-    function handleSuggestionModeChange() {
-        const isSuggestionMode = $(this).is(':checked');
-        if (isSuggestionMode) {
-            $('#ai-suggestion-inputs').slideDown();
-            $('#prompt-form > fieldset:not(:first-of-type):not(#ai-instruction-fieldset), #days-container, .add-day-btn').slideUp();
-        } else {
-            $('#ai-suggestion-inputs').slideUp();
-            $('#prompt-form > fieldset:not(:first-of-type), #days-container, .add-day-btn').slideDown();
-        }
-    }
-
-    /**
-     * マークダウンプロンプトのインポートを処理します。
-     */
     function handleImport() {
         try {
             const markdownToParse = $('#import-prompt').val().trim();
@@ -294,9 +306,6 @@ $(document).ready(function(){
         }
     }
 
-    /**
-     * マークダウンプロンプトの生成を処理します。
-     */
     function handleGenerateMarkdown(){
         let markdown;
         const isSuggestionMode = $('#ai-suggestion-mode').is(':checked');
@@ -328,7 +337,6 @@ $(document).ready(function(){
                     day.date = `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
                     day.dayOfWeek = AppConfig.dayNames[date.getDay()];
                 }
-                // areaはprefCodeとcityから再構築
                 const allPrefectures = UI.getPrefectures();
                 const prefName = allPrefectures[day.prefCode] || '';
                 day.area = day.city ? `${prefName} (${day.city})` : prefName;
@@ -341,17 +349,13 @@ $(document).ready(function(){
 
         const $outputTextarea = $('#output-markdown');
         $outputTextarea.val(markdown);
-        $('#output-area').slideDown();
+        $('#output-area').show();
         $outputTextarea.css('height', 'auto').css('height', $outputTextarea.prop('scrollHeight') + 'px');
 
-        // Gemini実行ボタンを有効化し、前の結果をクリア
         UI.updateGeminiButtonState(true);
         UI.displayGeminiResponse(null);
     }
 
-    /**
-     * 生成されたマークダウンをクリップボードにコピーするのを処理します。
-     */
     function handleCopyMarkdown(){
          const textarea = document.getElementById('output-markdown');
          textarea.select();
@@ -359,9 +363,6 @@ $(document).ready(function(){
          alert('プロンプトをクリップボードにコピーしました！');
     }
 
-    /**
-     * 生成されたプロンプトをGemini APIに送信し、結果を表示します。
-     */
     function handleExecuteGemini() {
         const prompt = $('#output-markdown').val();
         if (!prompt) {
@@ -369,13 +370,11 @@ $(document).ready(function(){
             return;
         }
 
-        // ボタンを無効化し、ローディング表示
         UI.updateGeminiButtonState(false);
         UI.displayGeminiResponse(null, { isLoading: true });
 
         API_CLIENT.executeGemini(prompt)
             .done(function(response) {
-                // 成功時：結果を整形して表示
                 if (response && response.text) {
                     UI.displayGeminiResponse(response.text);
                 } else {
@@ -383,7 +382,6 @@ $(document).ready(function(){
                 }
             })
             .fail(function(jqXHR) {
-                // 失敗時：エラーメッセージを表示
                 let errorMessage = '不明なエラーが発生しました。';
                 if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
                     errorMessage = jqXHR.responseJSON.error;
@@ -393,11 +391,9 @@ $(document).ready(function(){
                 UI.displayGeminiResponse(null, { error: errorMessage });
             })
             .always(function() {
-                // 完了時：ボタンを再度有効化
                 UI.updateGeminiButtonState(true);
             });
     }
 
-    // Initialize the application
     initialize();
 });
