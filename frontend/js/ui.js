@@ -58,6 +58,7 @@ const UI = (function() {
             const templateFiles = {
                 dayPlan: 'templates/day-plan.hbs', placeInput: 'templates/place-input.hbs',
                 prefectureList: 'templates/prefecture-list.hbs', cityList: 'templates/city-list.hbs',
+                themeSelection: 'templates/theme-selection.hbs', // ★ 追加
                 markdown: 'templates/markdown.hbs', suggestionMarkdown: 'templates/suggestion-markdown.hbs'
             };
             const partialFiles = {
@@ -78,6 +79,7 @@ const UI = (function() {
         initialize: function(prefs) {
             prefectures = prefs;
             publicMethods.initializePrefectureModal();
+            publicMethods.initializeThemeModal(); // ★ 追加
             setupTimeSelects($('#outbound-dep-hour'), $('#outbound-dep-minute'));
             setupTimeSelects($('#outbound-arr-hour'), $('#outbound-arr-minute'));
             setupTimeSelects($('#inbound-dep-hour'), $('#inbound-dep-minute'));
@@ -99,6 +101,13 @@ const UI = (function() {
         initializeCityModal: function(cities) {
             const categorizedCities = categorizeCitiesByKana(cities);
             $('#modal-city-content').html(templates.cityList({ categories: categorizedCities }));
+        },
+
+        initializeThemeModal: function() {
+            if (templates.themeSelection) {
+                const modalContentHtml = templates.themeSelection({ themes: AppConfig.themes });
+                $('#modal-theme-content').html(modalContentHtml);
+            }
         },
 
         addDay: function(data = {}) {

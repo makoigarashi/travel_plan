@@ -1,5 +1,4 @@
-
-        {{! @file 1日ごとのプラン入力フォームのテンプレート }}
+{{! @file 1日ごとのプラン入力フォームのテンプレート }}
 <div class="border-2 border-dashed border-blue-500 p-6 mb-6 rounded-lg day-plan" data-day="{{dayNumber}}">
             <h2 class="text-2xl font-bold text-blue-600 text-center mt-0 pb-2 mb-6 flex justify-between items-center">
                 <span>{{dayNumber}}日目</span>
@@ -82,10 +81,21 @@
                 <div class="dynamic-input-container places-container"></div>
                 <button type="button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 text-sm rounded-lg -mt-2 add-item-btn add-place-btn">場所を追加</button>
                 <button type="button" class="mt-4 mb-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-colors search-events-btn disabled:opacity-50 disabled:cursor-not-allowed" disabled>この日のイベントを検索する (Walker+)</button>
-                <label class="block mt-4 mb-2 font-semibold">やりたいこと・食べたいもの</label>
-                <textarea class="must-do-eat w-full p-2 border border-gray-300 rounded-md min-h-[80px]"></textarea>
-                <label class="block mt-4 mb-2 font-semibold">交通パス・時間指定など</label>
-                <textarea class="day-specific-notes w-full p-2 border border-gray-300 rounded-md min-h-[80px]"></textarea>
+                
+                <!-- テーマ・目的選択 -->
+                <div class="mt-4 mb-4">
+                    <label class="block mb-2 font-semibold">この日のテーマ・目的</label>
+                    <div class="flex items-center gap-2">
+                        <button type="button" class="open-theme-modal-btn border border-gray-400 hover:border-blue-500 hover:text-blue-500 text-gray-600 font-bold py-2 px-4 rounded-lg transition-colors text-center w-24">
+                            目的<br>選択
+                        </button>
+                        <div class="selected-themes-container flex flex-wrap gap-2 p-2 border border-gray-200 rounded-md min-h-[42px] w-full">
+                            <!-- 選択されたテーマがここに表示されます -->
+                        </div>
+                    </div>
+                </div>
+
+                <label class="block mt-4 mb-2 font-semibold">その他要望</label>
+                <textarea class="day-specific-notes w-full p-2 border border-gray-300 rounded-md min-h-[80px]" placeholder="例：昼食は1,500円以内でお願いします。〇〇交通パスの利用を前提にしてください。"></textarea>
             </div>
         </div>
-    
