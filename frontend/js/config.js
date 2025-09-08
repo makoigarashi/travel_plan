@@ -104,5 +104,31 @@ const AppConfig = {
     },
 
     // 曜日
-    dayNames: ['日', '月', '火', '水', '木', '金', '土']
+    dayNames: ['日', '月', '火', '水', '木', '金', '土'],
+
+    // 目的選択モーダル用のテーマデータ
+    themes: {
+        "食事": [
+            { "id": "theme-gourmet", "name": "グルメ", "icon": "🍴" },
+            { "id": "theme-cafe", "name": "カフェ巡り", "icon": "☕" },
+            { "id": "theme-local-cuisine", "name": "郷土料理", "icon": "🍲" },
+            { "id": "theme-b-gourmet", "name": "B級グルメ", "icon": "😋" }
+        ],
+        "観光・文化": [
+            { "id": "theme-museums", "name": "美術館・博物館", "icon": "🖼️" },
+            { "id": "theme-scenic-spots", "name": "絶景スポット", "icon": "🏞️" },
+            { "id": "theme-tourist-spots", "name": "観光名所", "icon": "📍" }
+        ],
+        "体験・アクティビティ": [
+            { "id": "theme-hot-springs", "name": "温泉", "icon": "♨️" },
+            { "id": "theme-cycling", "name": "サイクリング", "icon": "🚲" },
+            { "id": "theme-crafts", "name": "伝統工芸体験", "icon": "🏺" },
+            { "id": "theme-strolling", "name": "散策", "icon": "🚶" }
+        ],
+        "その他": [
+            { "id": "theme-shopping", "name": "ショッピング", "icon": "🛍️" },
+            { "id": "theme-souvenirs", "name": "お土産探し", "icon": "🎁" },
+            { "id": "theme-relax", "name": "のんびり", "icon": "😌" }
+        ]
+    }
 };

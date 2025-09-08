@@ -42,12 +42,12 @@
 {{#each places}}
     *   {{#if url}}[{{name}}]({{url}}){{else}}{{name}}{{/if}}
 {{/each}}
-*   **やりたいこと・食べたいもの**:
-{{#each doEat}}
+*   **この日のテーマ・目的**:
+{{#each themes}}
     *   {{this}}
 {{/each}}
-*   **交通パス・時間指定など**:
-{{#each notes}}
+*   **その他要望**:
+{{#each otherRequests}}
     *   {{this}}
 {{/each}}
 {{/if}}

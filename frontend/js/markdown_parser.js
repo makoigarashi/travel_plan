@@ -155,7 +155,7 @@ const MARKDOWN_PARSER = (function() {
                 }
                 else if (title.includes('日目')) {
                     currentSection = 'day';
-                    currentDay = { places: [], doEat: [], notes: [], transport: {}, isAiSuggestion: false };
+                    currentDay = { places: [], themes: [], otherRequests: [], transport: {}, isAiSuggestion: false };
                     data.days.push(currentDay);
                     const dateMatch = title.match(/（(\d{4}\/\d{1,2}\/\d{1,2})・/);
                     if (dateMatch) {
@@ -192,10 +192,10 @@ const MARKDOWN_PARSER = (function() {
                                      if (currentListKey.includes('行きたい場所')) {
                                         const linkMatch = subItemText.match(/__LINK__(.+)__SEP__(.+)__ENDLINK__/);
                                         currentDay.places.push({ name: linkMatch ? linkMatch[1] : subItemText, url: linkMatch ? linkMatch[2] : '' });
-                                    } else if (currentListKey.includes('やりたいこと')) {
-                                        currentDay.doEat.push(subItemText);
-                                    } else if (currentListKey.includes('交通パス')) {
-                                        currentDay.notes.push(subItemText);
+                                    } else if (currentListKey.includes('この日のテーマ・目的')) {
+                                        currentDay.themes.push(subItemText);
+                                    } else if (currentListKey.includes('その他要望')) {
+                                        currentDay.otherRequests.push(subItemText);
                                     }
                                 }
                             });

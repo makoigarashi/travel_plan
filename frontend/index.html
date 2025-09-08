@@ -229,6 +229,24 @@
         </div>
     </div>
 
+    <!-- 目的選択モーダル -->
+    <div class="modal micromodal-slide" id="modal-theme" aria-hidden="true">
+        <div class="modal__overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" tabindex="-1" data-micromodal-close>
+            <div class="modal__container bg-white p-5 w-11/12 max-w-2xl max-h-[90vh] rounded-lg shadow-xl overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-theme-title">
+                <header class="modal__header flex justify-between items-center border-b border-gray-300 pb-4">
+                    <h2 class="modal__title m-0 text-xl font-bold" id="modal-theme-title">目的を選択</h2>
+                    <button class="modal__close bg-transparent border-0 cursor-pointer w-8 h-8 relative" aria-label="閉じる" data-micromodal-close></button>
+                </header>
+                <main class="modal__content mt-6" id="modal-theme-content">
+                    <!-- 目的選択ボタンがここに動的に生成されます -->
+                </main>
+                <footer class="modal__footer mt-6 pt-4 border-t border-gray-300 text-right">
+                    <button class="modal__btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors" data-micromodal-close aria-label="完了">完了</button>
+                </footer>
+            </div>
+        </div>
+    </div>
+
     
 
     <script src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>

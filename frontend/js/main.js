@@ -12,6 +12,7 @@ $(document).ready(function(){
     const API_ENDPOINT = AppConfig.API_ENDPOINT;
     let currentPrefButton = null;
     let currentCityButton = null;
+    let currentThemeButton = null; // ★ 追加
 
     /**
      * アプリケーションを初期化します。
@@ -117,6 +118,10 @@ $(document).ready(function(){
                     if (prefCode) loadCityModal(prefCode);
                 }
             })
+            .on('click', '.open-theme-modal-btn', function() { // ★ 追加
+                currentThemeButton = $(this);
+                MicroModal.show('modal-theme');
+            })
             .on('click', '.remove-day-btn', function(){
                  const $dayPlan = $(this).closest('.day-plan');
                  if ($('.day-plan').length > 1) {
@@ -154,6 +159,7 @@ $(document).ready(function(){
 
         $('#modal-prefecture-content').on('click', '.prefecture-select-btn', handlePrefectureSelect);
         $('#modal-city-content').on('click', '.city-select-btn', handleCitySelect);
+        $('#modal-theme-content').on('click', '.theme-select-btn', handleThemeSelect); // ★ 追加
         $('#ai-suggestion-mode').on('change', handleSuggestionModeChange);
         $('.import-button').on('click', handleImport);
         $('.generate-btn').on('click', handleGenerateMarkdown);
@@ -220,6 +226,37 @@ $(document).ready(function(){
             const cityName = $(this).data('city-name');
             currentCityButton.text(cityName).data('city-name', cityName).attr('data-katakana', $(this).attr('title') || '');
             MicroModal.close('modal-city');
+        }
+    }
+
+    /**
+     * モーダルからのテーマ選択を処理します。
+     */
+    function handleThemeSelect() {
+        if (!currentThemeButton) return;
+
+        const $button = $(this);
+        const themeId = $button.data('theme-id');
+        const themeName = $button.data('theme-name');
+        const $themesContainer = currentThemeButton.closest('.day-plan').find('.selected-themes-container');
+
+        // 選択状態をトグル
+        $button.toggleClass('bg-green-200 border-green-600');
+
+        // コンテナ内の既存のテーマを確認
+        const $existingTheme = $themesContainer.find(`.theme-badge[data-theme-id="${themeId}"]`);
+
+        if ($existingTheme.length) {
+            // 存在すれば削除
+            $existingTheme.remove();
+        } else {
+            // 存在しなければ追加
+            const badgeHtml = `
+                <span class="theme-badge inline-flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full" data-theme-id="${themeId}">
+                    ${themeName}
+                </span>
+            `;
+            $themesContainer.append(badgeHtml);
         }
     }
 
