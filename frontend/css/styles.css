@@ -16,3 +16,8 @@
 }
 
 .modal[aria-hidden="true"] { display: none; }
+
+.theme-select-btn:active {
+  background-color: #68D391; /* A darker green */
+  border-color: #38A169;
+}

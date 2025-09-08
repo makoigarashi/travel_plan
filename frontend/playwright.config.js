@@ -7,7 +7,10 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
   workers: process.env.CI ? 1 : undefined,
-  reporter: 'html', // レポート形式を'html'に変更し、デバッグしやすくします
+  reporter: [
+    ['list'],
+    ['html', { open: 'never' }]
+  ],  
   use: {
     trace: 'on-first-retry',
     // baseURLをWebサーバーのルートに設定します

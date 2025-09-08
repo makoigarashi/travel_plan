@@ -78,9 +78,14 @@ const DATA_MANAGER = (function() {
                 isDayTrip: $dayDiv.find('.day-is-day-trip').is(':checked'), // 日帰りフラグを追加
                 transport: {}, // Initialize as empty
                 places: [],
-                doEat: $dayDiv.find('.must-do-eat').val().trim().split('\n').filter(Boolean),
-                notes: $dayDiv.find('.day-specific-notes').val().trim().split('\n').filter(Boolean)
+                themes: [],
+                otherRequests: $dayDiv.find('.day-specific-notes').val().trim().split('\n').filter(Boolean)
             };
+
+            // ★ 追加: 選択されたテーマを取得
+            $dayDiv.find('.selected-themes-container .theme-badge').each(function() {
+                dayData.themes.push($(this).text().trim());
+            });
 
             const dayTransportName = $dayDiv.find('.day-transport-name').val().trim();
             const dayTransportDep = $dayDiv.find('.day-transport-dep-location').val().trim();

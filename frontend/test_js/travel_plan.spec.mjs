@@ -45,7 +45,7 @@ test('[UI] 基本情報と1日のシンプルなプランのインポート', as
 `;
 
   await page.locator('.toggle-import-btn').click();
-  await expect(page.locator('#import-prompt')).toBeVisible(); // アニメーション完了を待つ
+  await page.locator('#import-prompt').waitFor({ state: 'visible' }); // Add this line
   await page.locator('#import-prompt').fill(input);
   await page.locator('.import-button').click();
 
@@ -58,7 +58,6 @@ test('[UI] 基本情報と1日のシンプルなプランのインポート', as
 
   await expect(page.locator('.day-plan:first-child .place-name')).toHaveValue('苫小牧市美術博物館');
   await expect(page.locator('.day-plan:first-child .place-url')).toHaveValue('https://example.com/museum');
-  await expect(page.locator('.day-plan:first-child .must-do-eat')).toHaveValue('ご当地名物を食べる');
 });
 
 test('[UI] 複雑なプロンプトの読み込みテスト', async ({ page }) => {
@@ -175,7 +174,7 @@ test('[UI] 日ごとのAIおまかせモードの生成と復元', async ({ page
 
 test('[UI] 日帰りチェックボックスの挙動', async ({ page }) => {
   // 1. 1日目にのみチェックボックスが表示されることを確認
-  await expect(page.locator('.day-plan:first-child .day-trip-option')).toBeVisible();
+  await expect(page.locator('.day-plan').first().locator('.day-trip-option')).toBeVisible();
 
   // 2. 2日目を追加し、そこにはチェックボックスがないことを確認
   await page.locator('.add-day-btn').click();
@@ -227,4 +226,28 @@ test('[UI] Gemini API連携テスト', async ({ page }) => {
   // 5. 最終的に正しい応答がpタグとしてレンダリングされるのを直接待つ
   //    ローディングのような中間状態をテストすると不安定になることがあるため、最終結果のみを検証します。
   await expect(page.locator('#gemini-response-content p')).toHaveText('Geminiからの応答メッセージです。');
+});
+
+test.describe('目的選択機能', () => {
+  test('目的選択モーダルが開き、テーマを選択・解除できる', async ({ page }) => {
+    // 1. 目的選択モーダルを開く
+    await page.locator('.day-plan:first-child .open-theme-modal-btn').click();
+    await expect(page.locator('#modal-theme-title')).toBeVisible();
+    await expect(page.locator('#modal-theme-title')).toHaveText('目的を選択');
+
+    // 2. モーダル内にテーマが表示されていることを確認 (この時点では失敗するはず)
+    await expect(page.locator('.theme-select-btn[data-theme-name="グルメ"]')).toBeVisible();
+
+    // 3. テーマを選択し、表示されることを確認
+    await page.locator('.theme-select-btn[data-theme-name="グルメ"]').click();
+    await expect(page.locator('.day-plan:first-child .selected-themes-container')).toHaveText(/グルメ/);
+
+    // 4. もう一度クリックして選択解除
+    await page.locator('.theme-select-btn[data-theme-name="グルメ"]').click();
+    await expect(page.locator('.day-plan:first-child .selected-themes-container')).not.toHaveText(/グルメ/);
+
+    // 5. モーダルを閉じる
+    await page.locator('#modal-theme .modal__btn').click();
+    await expect(page.locator('#modal-theme')).not.toBeVisible();
+  });
 });
