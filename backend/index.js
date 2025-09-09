@@ -9,8 +9,7 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
-const { Firestore } = require('@google-cloud/firestore');
-const sqlite3 = require('sqlite3').verbose();
+const db = require('./db');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -21,46 +20,11 @@ const PORT = process.env.PORT || 8080;
 const MLIT_API_KEY = process.env.MLIT_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const IS_PRODUCTION = !!process.env.GOOGLE_CLOUD_PROJECT;
-const DB_FILE = path.join(__dirname, 'database.sqlite');
 
 // -----------------------------------------------
 // DBとAPIクライアントの初期化
 // -----------------------------------------------
-let db;
 let geminiModel;
-
-/**
- * データベースを初期化します。
- * 本番環境ではFirestore、開発環境ではSQLiteを使用します。
- */
-async function initializeDatabase() {
-    if (IS_PRODUCTION) {
-        console.log('Initializing Firestore...');
-        db = new Firestore();
-        console.log('Firestore initialized.');
-    } else {
-        console.log('Initializing SQLite...');
-        db = new sqlite3.Database(DB_FILE, (err) => {
-            if (err) {
-                console.error('FATAL ERROR: Could not connect to SQLite.', err.message);
-                process.exit(1);
-            }
-            console.log('Connected to the local SQLite database.');
-        });
-
-        // settingsテーブルが存在しない場合は作成
-        db.run(`CREATE TABLE IF NOT EXISTS settings (
-            key TEXT PRIMARY KEY,
-            value TEXT
-        )`, (err) => {
-            if (err) {
-                console.error('FATAL ERROR: Could not create settings table.', err.message);
-                process.exit(1);
-            }
-            console.log("SQLite 'settings' table is ready.");
-        });
-    }
-}
 
 /**
  * Gemini APIクライアントを初期化します。
@@ -170,29 +134,13 @@ async function handleGeminiExecute(req, res) {
  * @param {object} res - Expressレスポンスオブジェクト。
  */
 async function handleGetSettings(req, res) {
-    let settings = {};
-    if (IS_PRODUCTION) {
-        const snapshot = await db.collection('settings').get();
-        snapshot.forEach(doc => {
-            settings[doc.id] = JSON.parse(doc.data().value);
-        });
-    } else {
-        await new Promise((resolve, reject) => {
-            db.all("SELECT key, value FROM settings", [], (err, rows) => {
-                if (err) return reject(err);
-                rows.forEach(row => {
-                    try {
-                        settings[row.key] = JSON.parse(row.value);
-                    } catch (e) {
-                        console.warn(`Could not parse setting for key: ${row.key}, value: ${row.value}`);
-                        settings[row.key] = row.value; // パース失敗時はそのままの値を返す
-                    }
-                });
-                resolve();
-            });
-        });
+    try {
+        const settings = await db.getSettings(); // dbモジュールのgetSettingsを呼び出し
+        res.status(200).json(settings);
+    } catch (error) {
+        console.error('Failed to get settings:', error);
+        res.status(500).json({ error: 'Failed to retrieve settings.' });
     }
-    res.status(200).json(settings);
 }
 
 /**
@@ -206,26 +154,13 @@ async function handlePostSettings(req, res) {
         return res.status(400).json({ error: 'Invalid settings format.' });
     }
 
-    if (IS_PRODUCTION) {
-        const batch = db.batch();
-        for (const key in settings) {
-            const docRef = db.collection('settings').doc(key);
-            batch.set(docRef, { value: JSON.stringify(settings[key]) });
-        }
-        await batch.commit();
-    } else {
-        const stmt = db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)");
-        for (const key in settings) {
-            await new Promise((resolve, reject) => {
-                stmt.run(key, JSON.stringify(settings[key]), (err) => {
-                    if (err) return reject(err);
-                    resolve();
-                });
-            });
-        }
-        await new Promise((resolve) => stmt.finalize(resolve));
+    try {
+        await db.saveSettings(settings); // dbモジュールのsaveSettingsを呼び出し
+        res.status(200).json({ message: 'Settings saved successfully.' });
+    } catch (error) {
+        console.error('Failed to save settings:', error);
+        res.status(500).json({ error: 'Failed to save settings.' });
     }
-    res.status(200).json({ message: 'Settings saved successfully.' });
 }
 
 
@@ -301,7 +236,7 @@ async function startServer() {
     }
     
     initializeGemini(); // Geminiはキーがなくてもサーバーは起動する
-    await initializeDatabase();
+    await db.initialize(IS_PRODUCTION); // dbモジュールのinitializeを呼び出し
 
     app.listen(PORT, () => {
         console.log(`Server is listening on port ${PORT}`);
