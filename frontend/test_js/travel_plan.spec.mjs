@@ -81,8 +81,9 @@ test('[UI] 基本情報と1日のシンプルなプランのインポート', as
     *   ご当地名物を食べる
 `;
 
-  await page.locator('.toggle-import-btn').click();
-  await page.waitForTimeout(500); // 短い遅延を追加
+  const importButton = page.locator('.toggle-import-btn');
+  await importButton.waitFor({ state: 'visible' });
+  await importButton.click();
   await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
   await page.locator('#import-prompt').waitFor({ state: 'visible' }); // Add this line
   await page.locator('#import-prompt').fill(input);
@@ -112,8 +113,9 @@ test('[UI] 複雑なプロンプトの読み込みテスト', async ({ page }) =
     *   [札幌時計台](https://example.com/sapporo-clock-tower)
 `;
 
-  await page.locator('.toggle-import-btn').click();
-  await page.waitForTimeout(500); // 短い遅延を追加
+  const importButton = page.locator('.toggle-import-btn');
+  await importButton.waitFor({ state: 'visible' });
+  await importButton.click();
   await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
   await page.locator('#import-prompt').fill(input);
   await page.locator('.import-button').click();
@@ -158,8 +160,9 @@ test('[UI] AI提案モードのプロンプトを読み込んでフォームに�
     *   レンタカーを借りたい
 `;
 
-  await page.locator('.toggle-import-btn').click(); // インポートエリアを開く
-  await page.waitForTimeout(500); // 短い遅延を追加
+  const importButton = page.locator('.toggle-import-btn');
+  await importButton.waitFor({ state: 'visible' });
+  await importButton.click(); // インポートエリアを開く
   await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
   await page.locator('#import-prompt').fill(prompt);
   await page.locator('.import-button').click();
@@ -188,6 +191,7 @@ test('[UI] 日ごとのAIおまかせモードの生成と復元', async ({ page
 
   // 2. Markdownを生成
   await page.locator('.generate-btn').click();
+  await page.waitForFunction(() => document.getElementById('output-markdown').value.length > 0);
   const generatedMarkdown = await page.locator('#output-markdown').inputValue();
 
   // 3. 生成されたMarkdownを検証
@@ -200,7 +204,10 @@ test('[UI] 日ごとのAIおまかせモードの生成と復元', async ({ page
 
   // --- Part 2: 復元テスト ---
   // 1. Part 1で生成したMarkdownをインポートエリアに設定
-  await page.locator('.toggle-import-btn').click(); // インポートエリアを開く
+  const importButton = page.locator('.toggle-import-btn');
+  await importButton.waitFor({ state: 'visible' });
+  await importButton.click(); // インポートエリアを開く
+  await page.locator('#import-area').waitFor({ state: 'visible' });
   await page.locator('#import-prompt').fill(generatedMarkdown);
   await page.locator('.import-button').click();
 
@@ -244,6 +251,7 @@ test('[UI] 日帰りチェックボックスの挙動', async ({ page }) => {
   await page.locator('.generate-btn').click();
 
   // 7. Markdownに「宿泊先」が含まれないことを確認
+  await page.waitForFunction(() => document.getElementById('output-markdown').value.length > 0);
   const generatedMarkdown = await page.locator('#output-markdown').inputValue();
   await expect(generatedMarkdown).not.toContain('宿泊先／最終目的地');
 });
@@ -260,6 +268,7 @@ test('[UI] Gemini API連携テスト', async ({ page }) => {
   await page.locator('.generate-btn').click();
 
   // 3. Markdownが生成され、Gemini実行ボタンが有効になるのを待つ
+  await page.waitForFunction(() => document.getElementById('output-markdown').value.length > 0);
   await expect(page.locator('#output-markdown')).not.toBeEmpty();
   await expect(page.locator('#execute-gemini-btn')).toBeEnabled();
 

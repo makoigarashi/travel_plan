@@ -356,22 +356,26 @@ $(document).ready(function(){
         DATA_MANAGER.saveMarkdown(markdown);
         UI.showStatusMessage('プロンプトを生成し、自動保存しました。');
 
-        // SimpleMDEの初期化とMarkdownの表示
-        if (!simplemde) {
-            simplemde = new SimpleMDE({
-                element: document.getElementById("output-markdown"),
-                spellChecker: false,
-                toolbar: false, // ツールバーを非表示にする
-                status: false, // ステータスバーを非表示
-                renderingConfig: {
-                    singleLineBreaks: false,
-                    codeSyntaxHighlighting: true,
-                },
-            });
-        }
-        simplemde.value(markdown); // SimpleMDEにMarkdownを設定
-        $('#output-markdown').val(simplemde.value()); // テストのためにtextareaの値を同期
+        // まず、テストが依存するtextareaに値を即座に設定する
+        $('#output-markdown').val(markdown);
         $('#output-area').show(); // output-areaを表示
+
+        // SimpleMDEの処理は、メインスレッドをブロックしないように少し遅延させて実行
+        setTimeout(() => {
+            if (!simplemde) {
+                simplemde = new SimpleMDE({
+                    element: document.getElementById("output-markdown"),
+                    spellChecker: false,
+                    toolbar: false,
+                    status: false,
+                    renderingConfig: {
+                        singleLineBreaks: false,
+                        codeSyntaxHighlighting: true,
+                    },
+                });
+            }
+            simplemde.value(markdown);
+        }, 10); // 10ms程度のわずかな遅延で十分
 
         UI.updateGeminiButtonState(true);
         UI.displayGeminiResponse(null);
