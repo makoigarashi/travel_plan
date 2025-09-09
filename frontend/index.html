@@ -13,11 +13,11 @@
         <button type="button" id="run-tests-btn" class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors" style="display:none;">シナリオテストを実行</button>
     </div>
     
-    <!-- (bodyタグの中身は、前回のバージョンから変更ありません) -->
     <div class="max-w-3xl mx-auto bg-white p-8 rounded-lg shadow-lg">
-        <div class="text-center mb-8">
+        <div class="text-center mb-8 relative">
             <h1 class="text-3xl font-bold text-blue-600 mb-1">旅行プラン・プロンプトジェネレーター</h1>
             <p class="text-sm text-gray-500 italic" id="version-info"></p>
+            <button type="button" id="open-settings-modal-btn" class="absolute top-0 right-0 p-2 text-2xl hover:bg-gray-200 rounded-full" aria-label="設定">⚙️</button>
             <p id="save-status" class="text-green-600 font-semibold mt-2 h-6"></p> <!-- メッセージ表示領域 -->
         </div>
 
@@ -50,13 +50,11 @@
                         <input type="date" id="trip-end-date" class="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
                     </div>
                 </div>
-
-                
-
                 <label for="trip-remarks" class="block mb-2 font-semibold">備考・その他の要望</label>
                 <textarea id="trip-remarks" class="w-full p-2 border border-gray-300 rounded-md min-h-[100px] focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：往路：新千歳 9:00発 - 羽田 10:35着
 復路：羽田 18:00発 - 新千歳 19:35着
-あまり歩き回りたくないです。"></textarea>            </div>
+あまり歩き回りたくないです。"></textarea>
+            </div>
         </fieldset>
 
         <form id="prompt-form">
@@ -70,15 +68,12 @@
                 <input type="text" id="theme" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：レトロな街並みを楽しむ">
                 <label for="priority" class="block mb-2 font-semibold">最優先事項</label>
                 <input type="text" id="priority" class="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：『〇〇展をじっくり見ること』が最優先">
-
-                <!-- 往路・復路情報フォーム -->
                 <div class="mt-6">
                     <details id="general-transport-details" class="bg-gray-50 p-4 rounded-lg shadow-inner">
                         <summary class="font-semibold cursor-pointer text-blue-600 hover:text-blue-800">
                             往路・復路の交通情報を入力する（任意）
                         </summary>
                         <div class="mt-4 border-t pt-4 space-y-6">
-                            <!-- 往路情報 -->
                             <div>
                                 <h4 class="font-bold text-gray-700 mb-2">往路（行き）の情報</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 p-3 border rounded-md bg-white">
@@ -117,8 +112,6 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <!-- 復路情報 -->
                             <div>
                                 <h4 class="font-bold text-gray-700 mb-2">復路（帰り）の情報</h4>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 p-3 border rounded-md bg-white">
@@ -162,9 +155,7 @@
                 </div>
             </fieldset>
 
-            <div id="days-container">
-                <!-- 日ごとのプラン入力欄がJavaScriptによってここに追加されます -->
-            </div>
+            <div id="days-container"></div>
 
             <div class="text-center my-8">
                 <button type="button" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors add-day-btn">旅行日数を追加する</button>
@@ -189,7 +180,6 @@
             <p id="markdown-status" class="text-sm text-gray-500 mt-2 text-center"></p>
             <button type="button" class="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors copy-button">クリップボードにコピー</button>
             
-            <!-- Gemini実行ボタンと結果表示エリア -->
             <div class="mt-6">
                 <button type="button" id="execute-gemini-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors" disabled>Geminiで実行</button>
             </div>
@@ -201,7 +191,6 @@
     </div>
 
     <!-- Modals and Templates -->
-    <!-- 市町村選択モーダル -->
     <div class="modal micromodal-slide" id="modal-city" aria-hidden="true">
         <div class="modal__overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" tabindex="-1" data-micromodal-close>
             <div class="modal__container bg-white p-5 w-11/12 max-w-2xl max-h-[90vh] rounded-lg shadow-xl overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-city-title">
@@ -209,14 +198,11 @@
                     <h2 class="modal__title m-0 text-xl font-bold" id="modal-city-title">市町村を選択</h2>
                     <button class="modal__close bg-transparent border-0 cursor-pointer w-8 h-8 relative" aria-label="閉じる" data-micromodal-close></button>
                 </header>
-                <main class="modal__content mt-6" id="modal-city-content">
-                    <!-- 市町村一覧がここに動的に生成されます -->
-                </main>
+                <main class="modal__content mt-6" id="modal-city-content"></main>
             </div>
         </div>
     </div>
 
-    <!-- Modals and Templates -->
     <div class="modal micromodal-slide" id="modal-prefecture" aria-hidden="true">
         <div class="modal__overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" tabindex="-1" data-micromodal-close>
             <div class="modal__container bg-white p-5 w-11/12 max-w-2xl max-h-[90vh] rounded-lg shadow-xl overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-prefecture-title">
@@ -229,7 +215,6 @@
         </div>
     </div>
 
-    <!-- 目的選択モーダル -->
     <div class="modal micromodal-slide" id="modal-theme" aria-hidden="true">
         <div class="modal__overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" tabindex="-1" data-micromodal-close>
             <div class="modal__container bg-white p-5 w-11/12 max-w-2xl max-h-[90vh] rounded-lg shadow-xl overflow-y-auto" role="dialog" aria-modal="true" aria-labelledby="modal-theme-title">
@@ -237,9 +222,7 @@
                     <h2 class="modal__title m-0 text-xl font-bold" id="modal-theme-title">目的を選択</h2>
                     <button class="modal__close bg-transparent border-0 cursor-pointer w-8 h-8 relative" aria-label="閉じる" data-micromodal-close></button>
                 </header>
-                <main class="modal__content mt-6" id="modal-theme-content">
-                    <!-- 目的選択ボタンがここに動的に生成されます -->
-                </main>
+                <main class="modal__content mt-6" id="modal-theme-content"></main>
                 <footer class="modal__footer mt-6 pt-4 border-t border-gray-300 text-right">
                     <button class="modal__btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors" data-micromodal-close aria-label="完了">完了</button>
                 </footer>
@@ -247,7 +230,25 @@
         </div>
     </div>
 
-    
+    <!-- ★★★ 設定モーダルを追加 ★★★ -->
+    <div class="modal micromodal-slide" id="modal-settings" aria-hidden="true">
+        <div class="modal__overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" tabindex="-1" data-micromodal-close>
+            <div class="modal__container bg-white p-5 w-11/12 max-w-3xl max-h-[90vh] rounded-lg shadow-xl flex flex-col" role="dialog" aria-modal="true" aria-labelledby="modal-settings-title">
+                <header class="modal__header flex justify-between items-center border-b border-gray-300 pb-4">
+                    <h2 class="modal__title m-0 text-xl font-bold" id="modal-settings-title">設定</h2>
+                    <button class="modal__close bg-transparent border-0 cursor-pointer w-8 h-8 relative" aria-label="閉じる" data-micromodal-close></button>
+                </header>
+                <main class="modal__content mt-4 flex-grow overflow-y-auto" id="modal-settings-content">
+                    <!-- ここに設定フォームの中身が入ります -->
+                </main>
+                <footer class="modal__footer mt-6 pt-4 border-t border-gray-300 text-right space-x-2">
+                    <button class="modal__btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors" id="save-settings-btn">保存して閉じる</button>
+                    <button class="modal__btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors" data-micromodal-close aria-label="閉じる">キャンセル</button>
+                </footer>
+            </div>
+        </div>
+    </div>
+
 
     <script src="https://unpkg.com/micromodal/dist/micromodal.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -255,18 +256,12 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <script src="js/config.js"></script>
-    <!-- 専門家たち（ヘルパー）を、先に読み込みます -->
     <script src="js/data_manager.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/markdown_generator.js"></script>
     <script src="js/markdown_parser.js"></script>
     <script src="js/api_client.js"></script>
 
-    <!-- テスト関連 -->
-    <!-- <script src="test_js/test_scenarios.js"></script> -->
-    <!-- <script src="test_js/test_runner.js"></script> -->
-
-    <!-- 最後に、司令塔（メインロジック）を読み込みます -->
     <script src="js/main.js"></script>
 </body>
 </html>

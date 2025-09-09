@@ -37,9 +37,33 @@ const API_CLIENT = (function() {
         });
     }
 
+    /**
+     * データベースから設定を取得します。
+     * @returns {Promise<object>} 設定オブジェクトを含むPromise。
+     */
+    function getSettings() {
+        return $.getJSON(`${API_ENDPOINT}/api/settings`);
+    }
+
+    /**
+     * 設定をデータベースに保存します。
+     * @param {object} settings - 保存する設定オブジェクト。
+     * @returns {Promise<object>} 保存結果を含むPromise。
+     */
+    function saveSettings(settings) {
+        return $.ajax({
+            url: `${API_ENDPOINT}/api/settings`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(settings)
+        });
+    }
+
     return {
         getPrefectures: getPrefectures,
         getCities: getCities,
-        executeGemini: executeGemini
+        executeGemini: executeGemini,
+        getSettings: getSettings,
+        saveSettings: saveSettings
     };
 })();

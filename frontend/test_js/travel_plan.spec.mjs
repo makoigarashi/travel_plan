@@ -18,6 +18,43 @@ test.beforeEach(async ({ page }) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(cities) });
   });
 
+  // settings APIをモック
+  await page.route('**/api/settings', async route => {
+    const mockSettings = {
+      defaultValues: {
+        departure: "札幌",
+        members: "50代、1人、体力に少し不安",
+        theme: "美術館に行く",
+        priority: "節約志向"
+      },
+      themes: {
+        "食事": [
+            { "id": "theme-gourmet", "name": "グルメ", "icon": "🍴" },
+            { "id": "theme-cafe", "name": "カフェ巡り", "icon": "☕" },
+            { "id": "theme-local-cuisine", "name": "郷土料理", "icon": "🍲" },
+            { "id": "theme-b-gourmet", "name": "B級グルメ", "icon": "😋" }
+        ],
+        "観光・文化": [
+            { "id": "theme-museums", "name": "美術館・博物館", "icon": "🖼️" },
+            { "id": "theme-scenic-spots", "name": "絶景スポット", "icon": "🏞️" },
+            { "id": "theme-tourist-spots", "name": "観光名所", "icon": "📍" }
+        ],
+        "体験・アクティビティ": [
+            { "id": "theme-hot-springs", "name": "温泉", "icon": "♨️" },
+            { "id": "theme-cycling", "name": "サイクリング", "icon": "🚲" },
+            { "id": "theme-crafts", "name": "伝統工芸体験", "icon": "🏺" },
+            { "id": "theme-strolling", "name": "散策", "icon": "🚶" }
+        ],
+        "その他": [
+            { "id": "theme-shopping", "name": "ショッピング", "icon": "🛍️" },
+            { "id": "theme-souvenirs", "name": "お土産探し", "icon": "🎁" },
+            { "id": "theme-relax", "name": "のんびり", "icon": "😌" }
+        ]
+      }
+    };
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockSettings) });
+  });
+
   // confirmやalertダイアログがテストをブロックしないように、自動で閉じる
   page.on('dialog', dialog => dialog.dismiss());
 
@@ -45,6 +82,7 @@ test('[UI] 基本情報と1日のシンプルなプランのインポート', as
 `;
 
   await page.locator('.toggle-import-btn').click();
+  await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
   await page.locator('#import-prompt').waitFor({ state: 'visible' }); // Add this line
   await page.locator('#import-prompt').fill(input);
   await page.locator('.import-button').click();
@@ -117,7 +155,8 @@ test('[UI] AI提案モードのプロンプトを読み込んでフォームに�
     *   レンタカーを借りたい
 `;
 
-  await page.locator('.toggle-import-btn').click();
+  await page.locator('.toggle-import-btn').click(); // インポートエリアを開く
+  await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
   await page.locator('#import-prompt').fill(prompt);
   await page.locator('.import-button').click();
 
