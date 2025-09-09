@@ -20,7 +20,6 @@ const PORT = process.env.PORT || 8080;
 const MLIT_API_KEY = process.env.MLIT_API_KEY;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const IS_PRODUCTION = !!process.env.GOOGLE_CLOUD_PROJECT;
-const DB_FILE = path.join(__dirname, 'database.sqlite');
 
 // -----------------------------------------------
 // DBとAPIクライアントの初期化
@@ -237,7 +236,7 @@ async function startServer() {
     }
     
     initializeGemini(); // Geminiはキーがなくてもサーバーは起動する
-    await db.initialize(IS_PRODUCTION, DB_FILE); // dbモジュールのinitializeを呼び出し
+    await db.initialize(IS_PRODUCTION); // dbモジュールのinitializeを呼び出し
 
     app.listen(PORT, () => {
         console.log(`Server is listening on port ${PORT}`);
