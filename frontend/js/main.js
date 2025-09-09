@@ -144,7 +144,14 @@ $(document).ready(function(){
             
             UI.addDay({ date: nextDate, ...prevDayData });
         });
-        $('.toggle-import-btn').on('click', () => $('#import-area').toggle());
+                $('.toggle-import-btn').on('click', () => {
+            const importArea = document.getElementById('import-area');
+            if (importArea.style.display === 'none' || importArea.style.display === '') {
+                importArea.style.display = 'block';
+            } else {
+                importArea.style.display = 'none';
+            }
+        });
         $('#days-container')
             .on('click', '.open-prefecture-modal-btn', function() {
                 currentPrefButton = $(this);
@@ -306,6 +313,8 @@ $(document).ready(function(){
         }
     }
 
+    let simplemde; // SimpleMDEインスタンスを保持する変数
+
     function handleGenerateMarkdown(){
         let markdown;
         const isSuggestionMode = $('#ai-suggestion-mode').is(':checked');
@@ -347,20 +356,33 @@ $(document).ready(function(){
         DATA_MANAGER.saveMarkdown(markdown);
         UI.showStatusMessage('プロンプトを生成し、自動保存しました。');
 
-        const $outputTextarea = $('#output-markdown');
-        $outputTextarea.val(markdown);
-        $('#output-area').show();
-        $outputTextarea.css('height', 'auto').css('height', $outputTextarea.prop('scrollHeight') + 'px');
+        // SimpleMDEの初期化とMarkdownの表示
+        if (!simplemde) {
+            simplemde = new SimpleMDE({
+                element: document.getElementById("output-markdown"),
+                spellChecker: false,
+                toolbar: false, // ツールバーを非表示にする
+                status: false, // ステータスバーを非表示
+                renderingConfig: {
+                    singleLineBreaks: false,
+                    codeSyntaxHighlighting: true,
+                },
+            });
+        }
+        simplemde.value(markdown); // SimpleMDEにMarkdownを設定
+        $('#output-markdown').val(simplemde.value()); // テストのためにtextareaの値を同期
+        $('#output-area').show(); // output-areaを表示
 
         UI.updateGeminiButtonState(true);
         UI.displayGeminiResponse(null);
     }
 
     function handleCopyMarkdown(){
-         const textarea = document.getElementById('output-markdown');
-         textarea.select();
-         document.execCommand('copy');
-         alert('プロンプトをクリップボードにコピーしました！');
+         // SimpleMDEからMarkdownテキストを取得
+         const markdownToCopy = simplemde ? simplemde.value() : document.getElementById('output-markdown').value;
+         navigator.clipboard.writeText(markdownToCopy)
+             .then(() => alert('プロンプトをクリップボードにコピーしました！'))
+             .catch(err => console.error('クリップボードへのコピーに失敗しました:', err));
     }
 
     function handleExecuteGemini() {

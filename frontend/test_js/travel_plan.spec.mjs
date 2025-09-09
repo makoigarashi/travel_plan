@@ -82,7 +82,7 @@ test('[UI] 基本情報と1日のシンプルなプランのインポート', as
 `;
 
   await page.locator('.toggle-import-btn').click();
-  await page.waitForTimeout(100); // 短い遅延を追加
+  await page.waitForTimeout(500); // 短い遅延を追加
   await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
   await page.locator('#import-prompt').waitFor({ state: 'visible' }); // Add this line
   await page.locator('#import-prompt').fill(input);
@@ -113,7 +113,7 @@ test('[UI] 複雑なプロンプトの読み込みテスト', async ({ page }) =
 `;
 
   await page.locator('.toggle-import-btn').click();
-  await page.waitForTimeout(100); // 短い遅延を追加
+  await page.waitForTimeout(500); // 短い遅延を追加
   await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
   await page.locator('#import-prompt').fill(input);
   await page.locator('.import-button').click();
@@ -159,7 +159,7 @@ test('[UI] AI提案モードのプロンプトを読み込んでフォームに�
 `;
 
   await page.locator('.toggle-import-btn').click(); // インポートエリアを開く
-  await page.waitForTimeout(100); // 短い遅延を追加
+  await page.waitForTimeout(500); // 短い遅延を追加
   await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
   await page.locator('#import-prompt').fill(prompt);
   await page.locator('.import-button').click();
