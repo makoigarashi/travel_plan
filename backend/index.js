@@ -6,10 +6,9 @@
 const express = require('express');
 const axios = require('axios');
 const cors = require('cors');
-const fs = require('fs');
-const path = require('path');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
 const db = require('./db');
+const geminiService = require('./services/geminiService'); // 追加
+const geoService = require('./services/geoService');     // 追加
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -17,42 +16,10 @@ const PORT = process.env.PORT || 8080;
 // -----------------------------------------------
 // 環境変数と定数
 // -----------------------------------------------
-const MLIT_API_KEY = process.env.MLIT_API_KEY;
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const IS_PRODUCTION = !!process.env.GOOGLE_CLOUD_PROJECT;
 
-// -----------------------------------------------
-// DBとAPIクライアントの初期化
-// -----------------------------------------------
-let geminiModel;
-
-/**
- * Gemini APIクライアントを初期化します。
- */
-function initializeGemini() {
-    if (GEMINI_API_KEY) {
-        const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-        geminiModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-latest' });
-        console.log('Gemini API client initialized.');
-    } else {
-        console.warn('WARNING: GEMINI_API_KEY is not set. Gemini related features will be disabled.');
-    }
-}
 
 
-// -----------------------------------------------
-// データ読み込み
-// -----------------------------------------------
-let prefectures = {};
-try {
-    const filePath = path.join(__dirname, 'prefectures.json');
-    const fileContent = fs.readFileSync(filePath, 'utf8');
-    prefectures = JSON.parse(fileContent);
-    console.log('Successfully loaded prefectures data.');
-} catch (error) {
-    console.error('FATAL ERROR: Could not read or parse prefectures.json.', error);
-    process.exit(1); // 都道府県データがないと動作しないため、プロセスを終了
-}
 
 // -----------------------------------------------
 // ミドルウェア設定
@@ -63,66 +30,7 @@ app.use(express.json());
 // プリフライトリクエスト(OPTIONS)への対応
 app.options('*', cors());
 
-// -----------------------------------------------
-// リクエストハンドラ関数 (既存API)
-// -----------------------------------------------
 
-/**
- * 都道府県リスト取得リクエストを処理します。
- * @param {object} req - Expressリクエストオブジェクト。
- * @param {object} res - Expressレスポンスオブジェクト。
- */
-function handleGetPrefectures(req, res) {
-    res.status(200).json(prefectures);
-}
-
-/**
- * 指定された都道府県の市区町村リスト取得リクエストを処理します。
- * @param {object} req - Expressリクエストオブジェクト。
- * @param {object} res - Expressレスポンスオブジェクト。
- */
-async function handleGetCities(req, res) {
-    const { prefCode } = req.query;
-    if (!prefCode) {
-        return res.status(400).json({ error: 'Prefecture code is required.' });
-    }
-    const query = `query { municipalities(prefCodes: [${parseInt(prefCode, 10)}]) { name, katakana } }`;
-    const response = await axios.post('https://www.mlit-data.jp/api/v1/', { query }, {
-        headers: { 'Content-Type': 'application/json', 'apikey': MLIT_API_KEY }
-    });
-
-    if (response.data && response.data.data && Array.isArray(response.data.data.municipalities)) {
-        const cities = response.data.data.municipalities.map(item => ({
-            name: item.name,
-            katakana: item.katakana || ''
-        }));
-        res.status(200).json(cities);
-    } else {
-        // エラーハンドリングの強化
-        const apiErrors = response.data?.errors || [{ message: 'Unexpected data format from MLIT API' }];
-        console.error('GraphQL Errors:', JSON.stringify(apiErrors, null, 2));
-        throw new Error('Failed to fetch city data from external API.');
-    }
-}
-
-/**
- * Gemini APIにプロンプトを送信し、結果を返します。
- * @param {object} req - Expressリクエストオブジェクト。
- * @param {object} res - Expressレスポンスオブジェクト。
- */
-async function handleGeminiExecute(req, res) {
-    if (!geminiModel) {
-        return res.status(503).json({ error: 'Gemini API is not available.' });
-    }
-    const { prompt } = req.body;
-    if (!prompt) {
-        return res.status(400).json({ error: 'Prompt is required.' });
-    }
-    const result = await geminiModel.generateContent(prompt);
-    const response = await result.response;
-    const text = response.text();
-    res.status(200).json({ text });
-}
 
 // -----------------------------------------------
 // リクエストハンドラ関数 (新規Settings API)
@@ -179,13 +87,29 @@ app.use('/', async (req, res, next) => {
 
         // POSTリクエストの処理 (Gemini実行)
         if (req.method === 'POST' && apiType === 'gemini') {
-            return await handleGeminiExecute(req, res);
+            try {
+                const text = await geminiService.generateContent(req.body.prompt);
+                return res.status(200).json({ text });
+            } catch (error) {
+                console.error('Error calling Gemini API:', error);
+                return res.status(500).json({ error: 'Failed to get response from Gemini API.' });
+            }
         }
 
         // GETリクエストの処理
         if (req.method === 'GET') {
-            if (apiType === 'prefectures') return handleGetPrefectures(req, res);
-            if (apiType === 'cities') return await handleGetCities(req, res);
+            if (apiType === 'prefectures') {
+                return res.status(200).json(geoService.getPrefectures());
+            }
+            if (apiType === 'cities') {
+                try {
+                    const cities = await geoService.getCities(req.query.prefCode);
+                    return res.status(200).json(cities);
+                } catch (error) {
+                    console.error('Error calling MLIT API:', error);
+                    return res.status(500).json({ error: 'Failed to fetch city data.' });
+                }
+            }
         }
         
         // 新しいAPIルートで処理されなかった場合
@@ -230,12 +154,10 @@ app.use((error, req, res, next) => {
  * 必要なAPIキーのチェック、DBの初期化を行い、Expressサーバーを起動します。
  */
 async function startServer() {
-    if (!MLIT_API_KEY) {
-        console.error('FATAL ERROR: MLIT_API_KEY environment variable is not set. Server will not start.');
-        process.exit(1);
-    }
     
-    initializeGemini(); // Geminiはキーがなくてもサーバーは起動する
+    
+    geminiService.initializeGemini(); // Geminiはキーがなくてもサーバーは起動する
+    geoService.loadPrefectures(); // 都道府県データを読み込み
     await db.initialize(IS_PRODUCTION); // dbモジュールのinitializeを呼び出し
 
     app.listen(PORT, () => {
