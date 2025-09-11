@@ -15,7 +15,7 @@ steps:
     - '--platform'
     - 'managed'
     - '--allow-unauthenticated'
-    - '--update-secrets=MLIT_API_KEY=mlit-api-key:latest,GEMINI_API_KEY=gemini-api-key:latest'
+    - '--update-secrets=MLIT_API_KEY=mlit-api-key:latest,GEMINI_API_KEY=gemini-api-key:latest,GOOGLE_MAPS_API_KEY=google-maps-api-key:latest'
 
 # -----------------------------------------------
 # Step 2: フロントエンド (GCS) のデプロイ
