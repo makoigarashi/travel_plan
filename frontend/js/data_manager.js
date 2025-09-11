@@ -102,10 +102,21 @@ const DATA_MANAGER = (function() {
                 };
             }
 
-            $dayDiv.find('.places-container .dynamic-input-group').each(function() {
-                const name = $(this).find('.place-name').val().trim();
+                        $dayDiv.find('.places-container .dynamic-input-group').each(function() {
+                const $placeNameInput = $(this).find('.place-name');
+                const name = $placeNameInput.val().trim();
                 const url = $(this).find('.place-url').val().trim();
-                if (name) dayData.places.push({ name: name, url: url });
+                if (name) {
+                    dayData.places.push({
+                        name: name,
+                        url: url,
+                        lat: $placeNameInput.data('lat'),
+                        lng: $placeNameInput.data('lng'),
+                        formattedAddress: $placeNameInput.data('formattedAddress'),
+                        stationName: $placeNameInput.data('stationName'),
+                        walkTimeMinutes: $placeNameInput.data('walkTimeMinutes')
+                    });
+                }
             });
 
             data.days.push(dayData);

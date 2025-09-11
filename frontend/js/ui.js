@@ -7,6 +7,8 @@ const UI = (function() {
     let dayCount = 0;
     let prefectures = {};
     const templates = {};
+    const maps = {}; // 各日の地図インスタンスを保持
+    const markers = {}; // 各日のマーカーを保持
 
     // --- Private Functions ---
 
@@ -78,6 +80,7 @@ const UI = (function() {
             prefectures = prefs;
             publicMethods.initializePrefectureModal();
             publicMethods.initializeThemeModal();
+            publicMethods.initializeMaps(); // 追加
             setupTimeSelects($('#outbound-dep-hour'), $('#outbound-dep-minute'));
             setupTimeSelects($('#outbound-arr-hour'), $('#outbound-arr-minute'));
             setupTimeSelects($('#inbound-dep-hour'), $('#inbound-dep-minute'));
@@ -89,6 +92,34 @@ const UI = (function() {
             $('#members').val(AppConfig.defaultValues.members);
             $('#theme').attr('placeholder', AppConfig.defaultValues.theme);
             $('#priority').attr('placeholder', AppConfig.defaultValues.priority);
+        },
+
+        initializeMaps: function() {
+            // 既存の地図インスタンスを破棄
+            for (const dayNum in maps) {
+                if (maps[dayNum]) {
+                    maps[dayNum].remove();
+                    maps[dayNum] = null;
+                }
+            }
+            // マーカーもクリア
+            for (const dayNum in markers) {
+                if (markers[dayNum]) {
+                    markers[dayNum].forEach(marker => marker.remove());
+                    markers[dayNum] = null;
+                }
+            }
+            // 各日の地図を初期化
+            $('.day-map').each(function() {
+                const dayNum = $(this).attr('id').replace('map-day-', '');
+                const mapId = `map-day-${dayNum}`;
+                const map = L.map(mapId, { zoomControl: false }).setView([35.681236, 139.767125], 5); // 日本の中心
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+                maps[dayNum] = map;
+                markers[dayNum] = [];
+            });
         },
 
         initializeSettingsModal: function(settings) {
@@ -334,6 +365,83 @@ const UI = (function() {
                 $newDay.find('.day-trip-option').show();
             }
             publicMethods.updateEventButtonState($newDay);
+
+            // 新しい日の地図を初期化
+            const dayNum = $newDay.data('day');
+            const mapId = `map-day-${dayNum}`;
+            const map = L.map(mapId, { zoomControl: false }).setView([35.681236, 139.767125], 5); // 日本の中心
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+            maps[dayNum] = map;
+            markers[dayNum] = [];
+
+            // 地図を更新
+            publicMethods.updateMapForDay(dayNum, data.places, restoredPrefCode, data.city);
+        },
+
+        updateMapForDay: function(dayNum, places = [], prefCode = '', city = '') {
+            const map = maps[dayNum];
+            if (!map) return;
+
+            // 既存のマーカーをクリア
+            if (markers[dayNum]) {
+                markers[dayNum].forEach(marker => marker.remove());
+            }
+            markers[dayNum] = [];
+
+            let bounds = [];
+
+            // 場所のピンを追加
+            places.forEach(place => {
+                // ★ここから追加★
+                console.log('DEBUG: place object in updateMapForDay:', place);
+                // ★ここまで追加★
+
+                if (place.lat && place.lng) {
+                    const marker = L.marker([place.lat, place.lng]).addTo(map);
+                    let popupContent = `<b>${place.name}</b>`;
+                    if (place.formattedAddress) {
+                        popupContent += `<br>${place.formattedAddress}`;
+                    }
+
+                    // ★ここから追加★
+                    console.log('DEBUG: place.stationName:', place.stationName, 'typeof:', typeof place.stationName, 'length:', place.stationName ? place.stationName.length : 'N/A');
+                    console.log('DEBUG: place.walkTimeMinutes:', place.walkTimeMinutes, 'typeof:', typeof place.walkTimeMinutes);
+                    console.log('DEBUG: condition 1 (string check):', typeof place.stationName === 'string' && place.stationName.length > 0);
+                    console.log('DEBUG: condition 2 (number check):', typeof place.walkTimeMinutes === 'number' && place.walkTimeMinutes > 0);
+                    console.log('DEBUG: combined condition:', (typeof place.stationName === 'string' && place.stationName.length > 0 && typeof place.walkTimeMinutes === 'number' && place.walkTimeMinutes > 0));
+                    // ★ここまで追加★
+
+                    if (typeof place.stationName === 'string' && place.stationName.length > 0 &&
+                        typeof place.walkTimeMinutes === 'number' && place.walkTimeMinutes > 0) {
+                        popupContent += `<br>最寄駅: ${place.stationName} (徒歩${place.walkTimeMinutes}分)`;
+                    }
+                    if (place.url) {
+                        popupContent += `<br><a href="${place.url}" target="_blank">詳細を見る</a>`;
+                    }
+                    marker.bindPopup(popupContent).openPopup(); // ★.openPopup()を追加★
+                    markers[dayNum].push(marker);
+                    bounds.push([place.lat, place.lng]);
+                }
+            });
+
+            // 地図の表示範囲を調整
+            if (bounds.length > 0) {
+                map.fitBounds(L.latLngBounds(bounds).pad(0.1));
+            } else if (prefCode) {
+                // 都道府県または市町村の中心に移動
+                const geoData = AppConfig.geoData[prefCode];
+                if (geoData) {
+                    // ここでは簡易的に都道府県の中心に移動。より正確には市町村のジオコーディングが必要
+                    // 現状のAppConfig.geoDataには緯度経度がないため、一旦日本全体
+                    // TODO: 都道府県・市町村の緯度経度データをAppConfigに追加するか、APIで取得
+                    map.setView([35.681236, 139.767125], 5); // 仮で日本全体
+                }
+            } else {
+                // ピンがない場合は日本全体を表示
+                map.setView([35.681236, 139.767125], 5); // 日本の中心
+            }
         },
 
         addPlace: function($container, placeData = {}) {
@@ -422,7 +530,7 @@ const UI = (function() {
             }
         },
 
-        getPrefectures: () => prefectures,
+        getPrefectures: () => AppConfig.geoData, // AppConfigから都道府県データを返すように変更
         getTemplates: () => templates
     };
 
