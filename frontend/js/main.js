@@ -144,13 +144,8 @@ $(document).ready(function(){
             
             UI.addDay({ date: nextDate, ...prevDayData });
         });
-                $('.toggle-import-btn').on('click', () => {
-            const importArea = document.getElementById('import-area');
-            if (importArea.style.display === 'none' || importArea.style.display === '') {
-                importArea.style.display = 'block';
-            } else {
-                importArea.style.display = 'none';
-            }
+                                $('.toggle-import-btn').on('click', () => {
+            $('#import-area').show();
         });
         $('#days-container')
             .on('click', '.open-prefecture-modal-btn', function() {
@@ -177,11 +172,32 @@ $(document).ready(function(){
                  } else { alert('最低でも1日は必要です。'); }
             })
             .on('click', '.add-place-btn', function(){ UI.addPlace($(this).prev('.places-container')); })
-            .on('click', '.remove-place-btn', function(){
+                                                            .on('click', '.remove-place-btn', function(){
                  const $group = $(this).closest('.dynamic-input-group');
-                 if ($group.parent().children().length > 1) { $group.remove(); }
+                 const $dayDiv = $(this).closest('.day-plan');
+                 const dayNum = $dayDiv.data('day');
+
+                 if (typeof dayNum === 'undefined' || dayNum === null) {
+                     console.error('ERROR: dayNum is undefined or null. Cannot update map.');
+                     return;
+                 }
+
+                 if ($group.parent().children().length > 1) {
+                     $group.remove();
+                     
+                     const formData = DATA_MANAGER.getCurrentFormData();
+
+                     if (!formData.days || !formData.days[dayNum - 1]) {
+                         console.error('ERROR: formData.days or formData.days[dayNum - 1] is undefined.');
+                         return;
+                     }
+
+                     const currentPlaces = formData.days[dayNum - 1].places;
+                     UI.updateMapForDay(dayNum, currentPlaces);
+                 }
                  else { alert('最低でも1つの入力欄は必要です。'); }
             })
+            .on('change', '.place-name', handlePlaceInputChange) // 追加
             .on('change', '.day-ai-suggestion-mode', function() {
                 const $checkbox = $(this);
                 const $dayPlan = $checkbox.closest('.day-plan');
@@ -225,6 +241,51 @@ $(document).ready(function(){
         } catch (error) {
             console.error('Failed to save settings:', error);
             alert('設定の保存に失敗しました。コンソールを確認してください。');
+        }
+    }
+
+    // 場所入力時の処理
+    async function handlePlaceInputChange() {
+        const $input = $(this);
+        const placeName = $input.val().trim();
+        const $dayDiv = $input.closest('.day-plan');
+        const dayNum = $dayDiv.data('day');
+
+        if (!placeName) {
+            // 場所名が空になったら地図からピンを削除
+            const currentPlaces = DATA_MANAGER.getCurrentFormData().days[dayNum - 1].places;
+            UI.updateMapForDay(dayNum, currentPlaces);
+            return;
+        }
+
+        try {
+            // ジオコーディング
+            const geocodeResult = await API_CLIENT.geocodeAddress(placeName);
+            const { lat, lng, formattedAddress } = geocodeResult;
+
+            // 最寄駅と徒歩時間を取得
+            const stationResult = await API_CLIENT.getNearestStationAndWalkTime(lat, lng);
+            const { stationName, walkTimeMinutes } = stationResult;
+
+            // ★ここから追加★
+            console.log('DEBUG: stationResult:', stationResult);
+            // ★ここまで追加★
+
+            // フォームのplaceDataを更新
+            $input.data('lat', lat);
+            $input.data('lng', lng);
+            $input.data('formattedAddress', formattedAddress);
+            $input.data('stationName', stationName);
+            $input.data('walkTimeMinutes', walkTimeMinutes);
+
+            // 地図を更新
+            const currentPlaces = DATA_MANAGER.getCurrentFormData().days[dayNum - 1].places;
+            UI.updateMapForDay(dayNum, currentPlaces);
+
+        } catch (error) {
+            console.error('Error processing place input:', error);
+            // エラー時は地図を更新しないか、エラー表示を検討
+            // $input.dataをクリアするなどの処理も必要かもしれない
         }
     }
 

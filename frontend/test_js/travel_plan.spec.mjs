@@ -55,8 +55,43 @@ test.beforeEach(async ({ page }) => {
     await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(mockSettings) });
   });
 
+  // geocode APIをモック
+  await page.route('**/api/geocode', async route => {
+    const { address } = route.request().postDataJSON();
+    let lat, lng, formattedAddress;
+    if (address === '場所A') {
+      lat = 35.681236; lng = 139.767125; formattedAddress = '東京都千代田区'; // 東京駅
+    } else if (address === '場所B') {
+      lat = 34.68639; lng = 135.52000; formattedAddress = '大阪府大阪市'; // 大阪駅
+    } else {
+      lat = 0; lng = 0; formattedAddress = 'Unknown';
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ lat, lng, formattedAddress }) });
+  });
+
+  // nearest-station APIをモック
+  await page.route('**/api/nearest-station', async route => {
+    const { lat, lng } = route.request().postDataJSON();
+    let stationName, walkTimeMinutes;
+    if (lat === 35.681236 && lng === 139.767125) {
+      stationName = '東京駅'; walkTimeMinutes = 5;
+    } else if (lat === 34.68639 && lng === 135.52000) {
+      stationName = '大阪駅'; walkTimeMinutes = 3;
+    } else {
+      stationName = '不明'; walkTimeMinutes = 0;
+    }
+    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ stationName, walkTimeMinutes }) });
+  });
+
   // confirmやalertダイアログがテストをブロックしないように、自動で閉じる
   page.on('dialog', dialog => dialog.dismiss());
+
+  // デバッグ用: 実際のリクエストを確認
+  page.on('request', request => {
+    if (request.url().includes('/api/geocode') || request.url().includes('/api/nearest-station')) {
+      console.log('>>', request.method(), request.url(), request.postDataJSON());
+    }
+  });
 
   // テスト対象ページに移動
   await page.goto('/index.html', { timeout: 60000 }); // タイムアウトを60秒に延長
@@ -162,7 +197,7 @@ test('[UI] AI提案モードのプロンプトを読み込んでフォームに�
 
   const importButton = page.locator('.toggle-import-btn');
   await importButton.waitFor({ state: 'visible' });
-  await importButton.click(); // インポートエリアを開く
+  await importButton.click();
   await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
   await page.locator('#import-prompt').fill(prompt);
   await page.locator('.import-button').click();
@@ -302,4 +337,44 @@ test.describe('目的選択機能', () => {
     await page.locator('#modal-theme .modal__btn').click();
     await expect(page.locator('#modal-theme')).not.toBeVisible();
   });
+});
+
+test('[UI] 場所を削除した際に地図上のピンが更新される', async ({ page }) => {
+  // 1. 1日目の場所入力欄に「場所A」と入力し、ジオコーディングをトリガー
+  await page.locator('.day-plan:first-child .place-name').fill('場所A');
+  await page.locator('.day-plan:first-child .place-name').dispatchEvent('change'); // イベントを直接発火
+  // 場所AのジオコーディングAPI応答を待つ
+  await page.waitForResponse(response => response.url().includes('/api/geocode'), { timeout: 10000 });
+  await page.waitForTimeout(500); // UI更新のための短い待機
+
+  // 2. 「場所を追加」ボタンをクリックして新しい場所入力欄を追加し、「場所B」と入力
+  await page.locator('.day-plan:first-child .add-place-btn').click();
+  // places-container の中の dynamic-input-group が2つになるまで待機
+  await expect(page.locator('.day-plan:first-child .places-container .dynamic-input-group')).toHaveCount(2, { timeout: 10000 });
+
+  await page.locator('.day-plan:first-child .dynamic-input-group').nth(1).locator('.place-name').fill('場所B');
+  await page.locator('.day-plan:first-child .dynamic-input-group').nth(1).locator('.place-name').dispatchEvent('change'); // イベントを直接発火
+  // 場所BのジオコーディングAPI応答を待つ
+  await page.waitForResponse(response => response.url().includes('/api/geocode'), { timeout: 10000 });
+  await page.waitForTimeout(500); // UI更新のための短い待機
+
+  // ここで、DATA_MANAGERが場所Aと場所Bの両方を持っていることを確認
+  await page.waitForFunction(() => {
+    const formData = DATA_MANAGER.getCurrentFormData();
+    if (formData.days[0].places.length !== 2) return false;
+    const place1 = formData.days[0].places[0];
+    const place2 = formData.days[0].places[1];
+    return place1.lat && place1.lng && place2.lat && place2.lng;
+  }, { timeout: 10000 });
+
+  // 3. 地図上に2つのピン（場所Aと場所B）が存在することを確認
+  // 明示的にピンが2つになるまで待機
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(2, { timeout: 10000 });
+
+  // 4. 「場所A」の削除ボタンをクリック
+  await page.locator('.day-plan:first-child .dynamic-input-group').nth(0).locator('.remove-place-btn').click();
+  await page.waitForTimeout(500); // 削除後のUI更新を待つ
+
+  // 5. 地図上に1つのピン（場所Bのみ）が存在することを確認
+  await expect(page.locator('.leaflet-marker-icon')).toHaveCount(1, { timeout: 10000 });
 });
