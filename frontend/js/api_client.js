@@ -59,11 +59,42 @@ const API_CLIENT = (function() {
         });
     }
 
+    /**
+     * 住所をジオコーディングし、緯度経度と整形された住所を返します。
+     * @param {string} address - ジオコーディングする住所または場所名。
+     * @returns {Promise<{lat: number, lng: number, formattedAddress: string}>} 緯度経度と整形された住所。
+     */
+    function geocodeAddress(address) {
+        return $.ajax({
+            url: `${API_ENDPOINT}/api/geocode`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ address: address })
+        });
+    }
+
+    /**
+     * 指定された場所の最寄駅とそこからの徒歩時間を取得します。
+     * @param {number} lat - 目的地の緯度。
+     * @param {number} lng - 目的地の経度。
+     * @returns {Promise<{stationName: string, walkTimeMinutes: number}>} 最寄駅名と徒歩時間（分）。
+     */
+    function getNearestStationAndWalkTime(lat, lng) {
+        return $.ajax({
+            url: `${API_ENDPOINT}/api/nearest-station`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ lat: lat, lng: lng })
+        });
+    }
+
     return {
         getPrefectures: getPrefectures,
         getCities: getCities,
         executeGemini: executeGemini,
         getSettings: getSettings,
-        saveSettings: saveSettings
+        saveSettings: saveSettings,
+        geocodeAddress: geocodeAddress,
+        getNearestStationAndWalkTime: getNearestStationAndWalkTime
     };
 })();

@@ -9,6 +9,7 @@ const cors = require('cors');
 const db = require('./db');
 const geminiService = require('./services/geminiService'); // 追加
 const geoService = require('./services/geoService');     // 追加
+const mapService = require('./services/mapService');     // 追加
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -78,6 +79,36 @@ async function handlePostSettings(req, res) {
 const apiRouter = express.Router();
 apiRouter.get('/settings', handleGetSettings);
 apiRouter.post('/settings', handlePostSettings);
+
+// 新しい地図関連API
+apiRouter.post('/geocode', async (req, res) => {
+    try {
+        const { address } = req.body;
+        if (!address) {
+            return res.status(400).json({ error: 'Address is required.' });
+        }
+        const result = await mapService.geocodeAddress(address);
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Geocode API Error:', error);
+        res.status(500).json({ error: 'Failed to geocode address.' });
+    }
+});
+
+apiRouter.post('/nearest-station', async (req, res) => {
+    try {
+        const { lat, lng } = req.body;
+        if (typeof lat === 'undefined' || typeof lng === 'undefined') {
+            return res.status(400).json({ error: 'Latitude and longitude are required.' });
+        }
+        const result = await mapService.getNearestStationAndWalkTime(lat, lng);
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Nearest Station API Error:', error);
+        res.status(500).json({ error: 'Failed to get nearest station and walk time.' });
+    }
+});
+
 app.use('/api', apiRouter);
 
 // 既存のルート (下位互換性のため残す)

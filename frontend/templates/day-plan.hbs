@@ -80,8 +80,6 @@
                 <label class="block mb-2 font-semibold">この日に行きたい場所</label>
                 <div class="dynamic-input-container places-container"></div>
                 <button type="button" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 text-sm rounded-lg -mt-2 add-item-btn add-place-btn">場所を追加</button>
-                <button type="button" class="mt-4 mb-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-colors search-events-btn disabled:opacity-50 disabled:cursor-not-allowed" disabled>この日のイベントを検索する (Walker+)</button>
-                
                 <!-- テーマ・目的選択 -->
                 <div class="mt-4 mb-4">
                     <label class="block mb-2 font-semibold">この日のテーマ・目的</label>
@@ -94,6 +92,16 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- 地図エリアをここに移動し、折り畳み機能を追加 -->
+                <details class="mt-4 bg-gray-50 p-3 rounded-md shadow-inner" open>
+                    <summary class="font-semibold cursor-pointer text-blue-600 hover:text-blue-800">
+                        この日の地図と場所情報
+                    </summary>
+                    <div class="day-map mt-3" id="map-day-{{dayNumber}}" style="height: 350px; width: 100%; border: 1px solid #ccc; border-radius: 0.5rem;"></div>
+                </details>
+
+                <button type="button" class="mt-4 mb-6 w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg transition-colors search-events-btn disabled:opacity-50 disabled:cursor-not-allowed" disabled>この日のイベントを検索する (Walker+)</button>
 
                 <label class="block mt-4 mb-2 font-semibold">その他要望</label>
                 <textarea class="day-specific-notes w-full p-2 border border-gray-300 rounded-md min-h-[80px]" placeholder="例：昼食は1,500円以内でお願いします。〇〇交通パスの利用を前提にしてください。"></textarea>
