@@ -4,13 +4,14 @@
   "description": "A proxy for GSI API on Cloud Run.",
   "main": "index.js",
   "dependencies": {
+    "@google-cloud/firestore": "^7.7.0",
     "@google/generative-ai": "^0.24.1",
+    "@googlemaps/google-maps-services-js": "^3.3.42",
+    "@mistralai/mistralai": "^1.10.0",
     "axios": "1.6.8",
     "cors": "2.8.5",
     "express": "4.19.2",
-    "@google-cloud/firestore": "^7.7.0",
-    "sqlite3": "^5.1.7",
-    "@googlemaps/google-maps-services-js": "^3.3.42"
+    "sqlite3": "^5.1.7"
   },
   "scripts": {
     "start": "node index.js",

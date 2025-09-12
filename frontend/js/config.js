@@ -39,8 +39,8 @@ const AppConfig = {
     DEBUG_FLAG: false,
 
     // アプリケーションのバージョン情報
-    version: '5.1',
-    appName: '地図連携・入力補助強化版',
+    version: '5.2',
+    appName: 'マルチLLM対応版',
 
     // フォームのデフォルト値
     defaultValues: {

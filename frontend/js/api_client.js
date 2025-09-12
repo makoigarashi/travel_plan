@@ -38,6 +38,20 @@ const API_CLIENT = (function() {
     }
 
     /**
+     * 指定されたプロンプトをMistral AI APIに送信して結果を取得します。
+     * @param {string} prompt - Mistralに送信するプロンプト文字列。
+     * @returns {Promise<object>} Mistral AI APIからのレスポンスを含むPromise。
+     */
+    function executeMistral(prompt) {
+        return $.ajax({
+            url: `${API_ENDPOINT}?api=mistral`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ prompt: prompt })
+        });
+    }
+
+    /**
      * データベースから設定を取得します。
      * @returns {Promise<object>} 設定オブジェクトを含むPromise。
      */
@@ -92,6 +106,7 @@ const API_CLIENT = (function() {
         getPrefectures: getPrefectures,
         getCities: getCities,
         executeGemini: executeGemini,
+        executeMistral: executeMistral, // 追加
         getSettings: getSettings,
         saveSettings: saveSettings,
         geocodeAddress: geocodeAddress,

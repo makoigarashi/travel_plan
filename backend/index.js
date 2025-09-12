@@ -8,6 +8,7 @@ const axios = require('axios');
 const cors = require('cors');
 const db = require('./db');
 const geminiService = require('./services/geminiService'); // 追加
+const mistralService = require('./services/mistralService'); // Mistral追加
 const geoService = require('./services/geoService');     // 追加
 const mapService = require('./services/mapService');     // 追加
 
@@ -127,6 +128,17 @@ app.use('/', async (req, res, next) => {
             }
         }
 
+        // POSTリクエストの処理 (Mistral実行)
+        if (req.method === 'POST' && apiType === 'mistral') {
+            try {
+                const text = await mistralService.generateContent(req.body.prompt);
+                return res.status(200).json({ text });
+            } catch (error) {
+                console.error('Error calling Mistral API:', error);
+                return res.status(500).json({ error: 'Failed to get response from Mistral API.' });
+            }
+        }
+
         // GETリクエストの処理
         if (req.method === 'GET') {
             if (apiType === 'prefectures') {
@@ -188,6 +200,7 @@ async function startServer() {
     
     
     geminiService.initializeGemini(); // Geminiはキーがなくてもサーバーは起動する
+    mistralService.initializeMistral(); // Mistralを初期化
     geoService.loadPrefectures(); // 都道府県データを読み込み
     await db.initialize(IS_PRODUCTION); // dbモジュールのinitializeを呼び出し
 
