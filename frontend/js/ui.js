@@ -505,16 +505,20 @@ const UI = (function() {
             $('#save-status').text(message).fadeIn().delay(3000).fadeOut();
         },
 
-        updateGeminiButtonState: function(enabled) {
-            $('#execute-gemini-btn').prop('disabled', !enabled);
+        updateLLMButtonState: function(enabled) {
+            $('#execute-gemini-btn, #execute-mistral-btn').prop('disabled', !enabled);
         },
 
-        displayGeminiResponse: function(content, { isLoading = false, error = null } = {}) {
+        displayLLMResponse: function(content, modelName, { isLoading = false, error = null } = {}) {
             const $responseArea = $('#gemini-response-area');
             const $responseContent = $('#gemini-response-content');
+            const $responseTitle = $responseArea.find('h3');
+
             $responseArea.slideDown();
+            $responseTitle.text(`${modelName}からの応答`);
+
             if (isLoading) {
-                $responseContent.html('<p class="text-gray-500">Geminiからの応答を待っています...</p>');
+                $responseContent.html(`<p class="text-gray-500">${modelName}からの応答を待っています...</p>`);
                 return;
             }
             if (error) {
