@@ -222,7 +222,8 @@ $(document).ready(function(){
         $('.import-button').on('click', handleImport);
         $('.generate-btn').on('click', handleGenerateMarkdown);
         $('.copy-button').on('click', handleCopyMarkdown);
-        $('#execute-gemini-btn').on('click', handleExecuteGemini);
+        $('#execute-gemini-btn').on('click', () => handleExecuteLLM(API_CLIENT.executeGemini, 'Gemini'));
+        $('#execute-mistral-btn').on('click', () => handleExecuteLLM(API_CLIENT.executeMistral, 'Mistral'));
     }
 
     /**
@@ -438,8 +439,8 @@ $(document).ready(function(){
             simplemde.value(markdown);
         }, 10); // 10ms程度のわずかな遅延で十分
 
-        UI.updateGeminiButtonState(true);
-        UI.displayGeminiResponse(null);
+        UI.updateLLMButtonState(true);
+        UI.displayLLMResponse(null, 'Gemini'); // デフォルトのモデル名を渡す
     }
 
     function handleCopyMarkdown(){
@@ -450,22 +451,27 @@ $(document).ready(function(){
              .catch(err => console.error('クリップボードへのコピーに失敗しました:', err));
     }
 
-    function handleExecuteGemini() {
+    /**
+     * LLM実行の共通ハンドラ
+     * @param {function} apiClientFunction - 実行するAPIクライアントの関数
+     * @param {string} modelName - 表示に使用するモデル名 (e.g., 'Gemini', 'Mistral')
+     */
+    function handleExecuteLLM(apiClientFunction, modelName) {
         const prompt = $('#output-markdown').val();
         if (!prompt) {
             alert('プロンプトがありません。');
             return;
         }
 
-        UI.updateGeminiButtonState(false);
-        UI.displayGeminiResponse(null, { isLoading: true });
+        UI.updateLLMButtonState(false);
+        UI.displayLLMResponse(null, modelName, { isLoading: true });
 
-        API_CLIENT.executeGemini(prompt)
+        apiClientFunction(prompt)
             .done(function(response) {
                 if (response && response.text) {
-                    UI.displayGeminiResponse(response.text);
+                    UI.displayLLMResponse(response.text, modelName);
                 } else {
-                    UI.displayGeminiResponse(null, { error: 'Geminiから予期しない形式の応答がありました。' });
+                    UI.displayLLMResponse(null, modelName, { error: `${modelName}から予期しない形式の応答がありました。` });
                 }
             })
             .fail(function(jqXHR) {
@@ -475,10 +481,10 @@ $(document).ready(function(){
                 } else if (jqXHR.statusText) {
                     errorMessage = jqXHR.statusText;
                 }
-                UI.displayGeminiResponse(null, { error: errorMessage });
+                UI.displayLLMResponse(null, modelName, { error: errorMessage });
             })
             .always(function() {
-                UI.updateGeminiButtonState(true);
+                UI.updateLLMButtonState(true);
             });
     }
 

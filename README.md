@@ -12,8 +12,8 @@ AI(LLM)に旅行プランの作成を依頼するための、詳細な指示（�
     *   **日ごとのおまかせ設定:** 特定の日だけ「AIにおまかせ」にすることで、固定プランとAIの提案を組み合わせた、ハイブリッドな旅行計画が可能です。
 *   **日ごとの目的設定:**
     *   「グルメ」「観光名所」「温泉」など、その日の主な目的を複数選択できます。これにより、AIがより具体的で、希望に沿ったプランを提案しやすくなります。
-*   **Gemini API連携:**
-    *   生成したプロンプトを、ワンクリックで直接Gemini APIに送信し、旅行プランの提案をリアルタイムに受け取れます。
+*   **Gemini API / Mistral AI API連携:**
+    *   生成したプロンプトを、ワンクリックで直接Gemini APIまたはMistral AI APIに送信し、旅行プランの提案をリアルタイムに受け取れます。
 *   **リッチなプレビュー:**
     *   生成されたプロンプトを、シンタックスハイライト付きで分かりやすくプレビューできます。
 *   **プロンプトのインポート/エクスポート:**
@@ -34,6 +34,7 @@ AI(LLM)に旅行プランの作成を依頼するための、詳細な指示（�
     *   バックエンド: Google Cloud Run
 *   **外部API:**
     *   [Google Gemini API](https://ai.google.dev/): 旅行プランの生成に使用しています。
+    *   [Mistral AI API](https://mistral.ai/): 旅行プランの生成に使用しています。
     *   [国土交通省 共通API](https://www.mlit.go.jp/plateau/api/): 市区町村データの取得に使用しています。
 
 ## ローカルでの実行方法
@@ -55,6 +56,7 @@ AI(LLM)に旅行プランの作成を依頼するための、詳細な指示（�
        ```
        MLIT_API_KEY="ここに国土交通省APIのキーを記述"
        GEMINI_API_KEY="ここにGemini APIのキーを記述"
+       MISTRAL_API_KEY="ここにMistral AI APIのキーを記述"
        ```
     c. 依存関係をインストールします。
        ```bash
@@ -119,4 +121,4 @@ AI(LLM)に旅行プランの作成を依頼するための、詳細な指示（�
 *   **フロントエンド:** `frontend`ディレクトリの内容がGoogle Cloud Storageに同期されます。
 *   **バックエンド:** `backend`ディレクトリの内容がコンテナ化され、Google Cloud Runにデプロイされます。
     *   **Firestore連携のための設定:** Cloud Runサービスの設定画面で、環境変数 `GOOGLE_CLOUD_PROJECT` にご自身のGoogle CloudプロジェクトIDを設定してください。これにより、本番環境でFirestoreが有効になります。
-    *   **Google Maps連携のための設定:** Cloud Buildを実行する前に、Secret Managerに`google-maps-api-key`という名前でAPIキーを登録しておく必要があります。
+    *   **Google Maps / Gemini / Mistral AI連携のための設定:** Cloud Buildを実行する前に、Secret Managerに`google-maps-api-key`, `gemini-api-key`, `mistral-api-key`という名前でそれぞれのAPIキーを登録しておく必要があります。
