@@ -21,3 +21,7 @@
   background-color: #68D391; /* A darker green */
   border-color: #38A169;
 }
+
+.modal__overlay {
+  z-index: 2000 !important; /* Leafletの最大値1000より高く設定 */
+}
