@@ -9,8 +9,48 @@ const UI = (function() {
     const templates = {};
     const maps = {}; // 各日の地図インスタンスを保持
     const markers = {}; // 各日のマーカーを保持
+    const polylines = {}; // 各日のルート(ポリライン)を保持
 
     // --- Private Functions ---
+
+    /**
+     * Googleのエンコード済みポリライン文字列をデコードする
+     * @param {string} encoded - エンコード済みポリライン
+     * @returns {Array<[number, number]>} 緯度経度の配列
+     */
+    function decodePolyline(encoded) {
+        if (!encoded) {
+            return [];
+        }
+
+        let points = [];
+        let index = 0, len = encoded.length;
+        let lat = 0, lng = 0;
+
+        while (index < len) {
+            let b, shift = 0, result = 0;
+            do {
+                b = encoded.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+            lat += dlat;
+
+            shift = 0;
+            result = 0;
+            do {
+                b = encoded.charCodeAt(index++) - 63;
+                result |= (b & 0x1f) << shift;
+                shift += 5;
+            } while (b >= 0x20);
+            let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+            lng += dlng;
+
+            points.push([lat / 1e5, lng / 1e5]);
+        }
+        return points;
+    }
 
     function setupTimeSelects($hourSelect, $minuteSelect) {
         $hourSelect.append('<option value="">--</option>');
@@ -380,67 +420,62 @@ const UI = (function() {
             publicMethods.updateMapForDay(dayNum, data.places, restoredPrefCode, data.city);
         },
 
-        updateMapForDay: function(dayNum, places = [], prefCode = '', city = '') {
+        updateMapForDay: async function(dayNum, places = [], prefCode = '', city = '') {
             const map = maps[dayNum];
             if (!map) return;
 
-            // 既存のマーカーをクリア
+            // 既存のマーカーとポリラインをクリア
             if (markers[dayNum]) {
                 markers[dayNum].forEach(marker => marker.remove());
             }
             markers[dayNum] = [];
+            if (polylines[dayNum]) {
+                polylines[dayNum].forEach(polyline => polyline.remove());
+            }
+            polylines[dayNum] = [];
 
             let bounds = [];
+            const validPlaces = places.filter(p => p.lat && p.lng);
 
             // 場所のピンを追加
-            places.forEach(place => {
-                // ★ここから追加★
-                console.log('DEBUG: place object in updateMapForDay:', place);
-                // ★ここまで追加★
-
-                if (place.lat && place.lng) {
-                    const marker = L.marker([place.lat, place.lng]).addTo(map);
-                    let popupContent = `<b>${place.name}</b>`;
-                    if (place.formattedAddress) {
-                        popupContent += `<br>${place.formattedAddress}`;
-                    }
-
-                    // ★ここから追加★
-                    console.log('DEBUG: place.stationName:', place.stationName, 'typeof:', typeof place.stationName, 'length:', place.stationName ? place.stationName.length : 'N/A');
-                    console.log('DEBUG: place.walkTimeMinutes:', place.walkTimeMinutes, 'typeof:', typeof place.walkTimeMinutes);
-                    console.log('DEBUG: condition 1 (string check):', typeof place.stationName === 'string' && place.stationName.length > 0);
-                    console.log('DEBUG: condition 2 (number check):', typeof place.walkTimeMinutes === 'number' && place.walkTimeMinutes > 0);
-                    console.log('DEBUG: combined condition:', (typeof place.stationName === 'string' && place.stationName.length > 0 && typeof place.walkTimeMinutes === 'number' && place.walkTimeMinutes > 0));
-                    // ★ここまで追加★
-
-                    if (typeof place.stationName === 'string' && place.stationName.length > 0 &&
-                        typeof place.walkTimeMinutes === 'number' && place.walkTimeMinutes > 0) {
-                        popupContent += `<br>最寄駅: ${place.stationName} (徒歩${place.walkTimeMinutes}分)`;
-                    }
-                    if (place.url) {
-                        popupContent += `<br><a href="${place.url}" target="_blank">詳細を見る</a>`;
-                    }
-                    marker.bindPopup(popupContent).openPopup(); // ★.openPopup()を追加★
-                    markers[dayNum].push(marker);
-                    bounds.push([place.lat, place.lng]);
-                }
+            validPlaces.forEach(place => {
+                const marker = L.marker([place.lat, place.lng]).addTo(map);
+                let popupContent = `<b>${place.name}</b>`;
+                if (place.formattedAddress) popupContent += `<br>${place.formattedAddress}`;
+                if (place.stationName && place.walkTimeMinutes) popupContent += `<br>最寄駅: ${place.stationName} (徒歩${place.walkTimeMinutes}分)`;
+                if (place.url) popupContent += `<br><a href="${place.url}" target="_blank">詳細を見る</a>`;
+                
+                marker.bindPopup(popupContent);
+                markers[dayNum].push(marker);
+                bounds.push([place.lat, place.lng]);
             });
+
+            // ルートを描画 (場所が2つ以上ある場合)
+            if (validPlaces.length > 1) {
+                for (let i = 0; i < validPlaces.length - 1; i++) {
+                    const origin = { lat: validPlaces[i].lat, lng: validPlaces[i].lng };
+                    const destination = { lat: validPlaces[i+1].lat, lng: validPlaces[i+1].lng };
+                    
+                    try {
+                        const route = await API_CLIENT.getDirections(origin, destination, 'walking'); // TODO: modeを動的に
+                        if (route && route.polyline) {
+                            const decodedPath = decodePolyline(route.polyline);
+                            const routeLine = L.polyline(decodedPath, { color: 'blue' }).addTo(map);
+                            polylines[dayNum].push(routeLine);
+                        }
+                    } catch (error) {
+                        console.error(`Failed to get directions between ${validPlaces[i].name} and ${validPlaces[i+1].name}:`, error);
+                    }
+                }
+            }
 
             // 地図の表示範囲を調整
             if (bounds.length > 0) {
-                map.fitBounds(L.latLngBounds(bounds).pad(0.1));
+                map.fitBounds(L.latLngBounds(bounds).pad(0.2)); // 少し余白を多めに
             } else if (prefCode) {
-                // 都道府県または市町村の中心に移動
-                const geoData = AppConfig.geoData[prefCode];
-                if (geoData) {
-                    // ここでは簡易的に都道府県の中心に移動。より正確には市町村のジオコーディングが必要
-                    // 現状のAppConfig.geoDataには緯度経度がないため、一旦日本全体
-                    // TODO: 都道府県・市町村の緯度経度データをAppConfigに追加するか、APIで取得
-                    map.setView([35.681236, 139.767125], 5); // 仮で日本全体
-                }
+                map.setView([35.681236, 139.767125], 5); // TODO: 都道府県の中心に移動
             } else {
-                // ピンがない場合は日本全体を表示
-                map.setView([35.681236, 139.767125], 5); // 日本の中心
+                map.setView([35.681236, 139.767125], 5);
             }
         },
 

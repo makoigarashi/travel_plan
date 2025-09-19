@@ -177,7 +177,7 @@ $(document).ready(function(){
                  } else { alert('最低でも1日は必要です。'); }
             })
             .on('click', '.add-place-btn', function(){ UI.addPlace($(this).prev('.places-container')); })
-                                                            .on('click', '.remove-place-btn', function(){
+                                                            .on('click', '.remove-place-btn', async function() { // async追加
                  const $group = $(this).closest('.dynamic-input-group');
                  const $dayDiv = $(this).closest('.day-plan');
                  const dayNum = $dayDiv.data('day');
@@ -190,15 +190,14 @@ $(document).ready(function(){
                  if ($group.parent().children().length > 1) {
                      $group.remove();
                      
+                     // await を使って非同期処理を待つ
                      const formData = DATA_MANAGER.getCurrentFormData();
-
                      if (!formData.days || !formData.days[dayNum - 1]) {
                          console.error('ERROR: formData.days or formData.days[dayNum - 1] is undefined.');
                          return;
                      }
-
                      const currentPlaces = formData.days[dayNum - 1].places;
-                     UI.updateMapForDay(dayNum, currentPlaces);
+                     await UI.updateMapForDay(dayNum, currentPlaces); // await追加
                  }
                  else { alert('最低でも1つの入力欄は必要です。'); }
             })
