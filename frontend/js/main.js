@@ -77,6 +77,9 @@ $(document).ready(function(){
             // --- 初期表示調整 ---
             updateViewForPlanMode($('#ai-suggestion-mode').is(':checked'));
 
+            // --- テスト用の初期化完了フラグ ---
+            $('body').attr('data-initialized', 'true');
+
         } catch (error) {
             console.error("Initialization failed:", error);
             alert('アプリケーションの初期化に失敗しました。コンソールを確認してください。');
@@ -145,7 +148,9 @@ $(document).ready(function(){
             UI.addDay({ date: nextDate, ...prevDayData });
         });
                                 $('.toggle-import-btn').on('click', () => {
-            $('#import-area').show();
+            $('#import-area').show(0, function() {
+                $(this).addClass('shown');
+            });
         });
         $('#days-container')
             .on('click', '.open-prefecture-modal-btn', function() {

@@ -59,103 +59,107 @@
             </div>
         </fieldset>
 
-        <form id="prompt-form">
-            <fieldset class="border border-gray-300 rounded-md p-6 mb-6">
-                <legend class="text-lg font-bold text-blue-600 px-2">旅行全体の基本情報</legend>
-                <label for="departure-point" class="block mb-2 font-semibold">出発地</label>
-                <input type="text" id="departure-point" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：札幌、自宅">
-                <label for="members" class="block mb-2 font-semibold">メンバー構成・体力レベル</label>
-                <input type="text" id="members" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：30代夫婦、体力に自信あり">
-                <label for="theme" class="block mb-2 font-semibold">旅のテーマ・雰囲気</label>
-                <input type="text" id="theme" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：レトロな街並みを楽しむ">
-                <label for="priority" class="block mb-2 font-semibold">最優先事項</label>
-                <input type="text" id="priority" class="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：『〇〇展をじっくり見ること』が最優先">
-                <div class="mt-6">
-                    <details id="general-transport-details" class="bg-gray-50 p-4 rounded-lg shadow-inner">
-                        <summary class="font-semibold cursor-pointer text-blue-600 hover:text-blue-800">
-                            往路・復路の交通情報を入力する（任意）
-                        </summary>
-                        <div class="mt-4 border-t pt-4 space-y-6">
-                            <div>
-                                <h4 class="font-bold text-gray-700 mb-2">往路（行き）の情報</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 p-3 border rounded-md bg-white">
-                                    <div>
-                                        <label for="outbound-transport-type" class="block text-sm font-medium text-gray-600">種別</label>
-                                        <select id="outbound-transport-type" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
-                                            <option value="">未選択</option>
-                                            <option>飛行機</option><option>列車</option><option>バス</option><option>フェリー</option><option>その他</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label for="outbound-transport-name" class="block text-sm font-medium text-gray-600">便名/列車名など</label>
-                                        <input type="text" id="outbound-transport-name" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
-                                    </div>
-                                    <div>
-                                        <label for="outbound-dep-location" class="block text-sm font-medium text-gray-600">出発地</label>
-                                        <input type="text" id="outbound-dep-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-600">出発時刻</label>
-                                        <div class="flex gap-2">
-                                            <select id="outbound-dep-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
-                                            <select id="outbound-dep-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+        <details class="border border-gray-300 rounded-md mb-6 group" open>
+                <summary class="list-none p-4 font-semibold cursor-pointer text-lg text-blue-600 flex justify-between items-center">
+                    旅行全体の基本情報
+                    <span class="summary-arrow text-gray-400 text-xl transition-transform duration-200 group-open:rotate-180">▼</span>
+                </summary>
+                <div class="p-6 pt-2 border-t">
+                    <label for="departure-point" class="block mb-2 font-semibold">出発地</label>
+                    <input type="text" id="departure-point" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：札幌、自宅">
+                    <label for="members" class="block mb-2 font-semibold">メンバー構成・体力レベル</label>
+                    <input type="text" id="members" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：30代夫婦、体力に自信あり">
+                    <label for="theme" class="block mb-2 font-semibold">旅のテーマ・雰囲気</label>
+                    <input type="text" id="theme" class="w-full p-2 border border-gray-300 rounded-md mb-4 focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：レトロな街並みを楽しむ">
+                    <label for="priority" class="block mb-2 font-semibold">最優先事項</label>
+                    <input type="text" id="priority" class="w-full p-2 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500" placeholder="例：『〇〇展をじっくり見ること』が最優先">
+                    <div class="mt-6">
+                        <details id="general-transport-details" class="bg-gray-50 p-4 rounded-lg shadow-inner">
+                            <summary class="font-semibold cursor-pointer text-blue-600 hover:text-blue-800">
+                                往路・復路の交通情報を入力する（任意）
+                            </summary>
+                            <div class="mt-4 border-t pt-4 space-y-6">
+                                <div>
+                                    <h4 class="font-bold text-gray-700 mb-2">往路（行き）の情報</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 p-3 border rounded-md bg-white">
+                                        <div>
+                                            <label for="outbound-transport-type" class="block text-sm font-medium text-gray-600">種別</label>
+                                            <select id="outbound-transport-type" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
+                                                <option value="">未選択</option>
+                                                <option>飛行機</option><option>列車</option><option>バス</option><option>フェリー</option><option>その他</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="outbound-transport-name" class="block text-sm font-medium text-gray-600">便名/列車名など</label>
+                                            <input type="text" id="outbound-transport-name" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div>
+                                            <label for="outbound-dep-location" class="block text-sm font-medium text-gray-600">出発地</label>
+                                            <input type="text" id="outbound-dep-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-600">出発時刻</label>
+                                            <div class="flex gap-2">
+                                                <select id="outbound-dep-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                                <select id="outbound-dep-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label for="outbound-arr-location" class="block text-sm font-medium text-gray-600">到着地</label>
+                                            <input type="text" id="outbound-arr-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-600">到着時刻</label>
+                                            <div class="flex gap-2">
+                                                <select id="outbound-arr-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                                <select id="outbound-arr-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <label for="outbound-arr-location" class="block text-sm font-medium text-gray-600">到着地</label>
-                                        <input type="text" id="outbound-arr-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-600">到着時刻</label>
-                                        <div class="flex gap-2">
-                                            <select id="outbound-arr-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
-                                            <select id="outbound-arr-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-gray-700 mb-2">復路（帰り）の情報</h4>
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 p-3 border rounded-md bg-white">
+                                        <div>
+                                            <label for="inbound-transport-type" class="block text-sm font-medium text-gray-600">種別</label>
+                                            <select id="inbound-transport-type" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
+                                                <option value="">未選択</option>
+                                                <option>飛行機</option><option>列車</option><option>バス</option><option>フェリー</option><option>その他</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label for="inbound-transport-name" class="block text-sm font-medium text-gray-600">便名/列車名など</label>
+                                            <input type="text" id="inbound-transport-name" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div>
+                                            <label for="inbound-dep-location" class="block text-sm font-medium text-gray-600">出発地</label>
+                                            <input type="text" id="inbound-dep-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-600">出発時刻</label>
+                                            <div class="flex gap-2">
+                                                <select id="inbound-dep-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                                <select id="inbound-dep-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label for="inbound-arr-location" class="block text-sm font-medium text-gray-600">到着地</label>
+                                            <input type="text" id="inbound-arr-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
+                                        </div>
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-600">到着時刻</label>
+                                            <div class="flex gap-2">
+                                                <select id="inbound-arr-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                                <select id="inbound-arr-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
-                            <div>
-                                <h4 class="font-bold text-gray-700 mb-2">復路（帰り）の情報</h4>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-3 p-3 border rounded-md bg-white">
-                                    <div>
-                                        <label for="inbound-transport-type" class="block text-sm font-medium text-gray-600">種別</label>
-                                        <select id="inbound-transport-type" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
-                                            <option value="">未選択</option>
-                                            <option>飛行機</option><option>列車</option><option>バス</option><option>フェリー</option><option>その他</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label for="inbound-transport-name" class="block text-sm font-medium text-gray-600">便名/列車名など</label>
-                                        <input type="text" id="inbound-transport-name" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
-                                    </div>
-                                    <div>
-                                        <label for="inbound-dep-location" class="block text-sm font-medium text-gray-600">出発地</label>
-                                        <input type="text" id="inbound-dep-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-600">出発時刻</label>
-                                        <div class="flex gap-2">
-                                            <select id="inbound-dep-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
-                                            <select id="inbound-dep-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label for="inbound-arr-location" class="block text-sm font-medium text-gray-600">到着地</label>
-                                        <input type="text" id="inbound-arr-location" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500">
-                                    </div>
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-600">到着時刻</label>
-                                        <div class="flex gap-2">
-                                            <select id="inbound-arr-hour" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
-                                            <select id="inbound-arr-minute" class="w-full p-2 mt-1 border border-gray-300 rounded-md focus:ring focus:ring-blue-500 focus:border-blue-500"></select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </details>
+                        </details>
+                    </div>
                 </div>
-            </fieldset>
+            </details>
 
             <div id="days-container"></div>
 
