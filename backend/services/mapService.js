@@ -109,7 +109,39 @@ async function getNearestStationAndWalkTime(lat, lng) {
     }
 }
 
+async function getDirections(origin, destination, mode = 'walking') {
+    if (!GOOGLE_MAPS_API_KEY) {
+        throw new Error('GOOGLE_MAPS_API_KEY is not set.');
+    }
+    try {
+        const response = await client.directions({
+            params: {
+                origin: origin,
+                destination: destination,
+                mode: mode,
+                key: GOOGLE_MAPS_API_KEY,
+                language: 'ja'
+            },
+            timeout: 2000 // タイムアウトを2秒に延長
+        });
+
+        if (response.data.routes.length > 0) {
+            // ルート描画に必要なエンコード済みポリラインを返す
+            return {
+                polyline: response.data.routes[0].overview_polyline.points
+            };
+        } else {
+            // ルートが見つからなかった場合
+            return { polyline: '' };
+        }
+    } catch (error) {
+        console.error('Directions API Error:', error.response ? error.response.data : error.message);
+        throw new Error('Failed to get directions.');
+    }
+}
+
 module.exports = {
     geocodeAddress,
-    getNearestStationAndWalkTime
+    getNearestStationAndWalkTime,
+    getDirections
 };

@@ -39,8 +39,8 @@ const AppConfig = {
     DEBUG_FLAG: false,
 
     // アプリケーションのバージョン情報
-    version: '5.3',
-    appName: 'UI改善・安定化版',
+    version: '5.4',
+    appName: '地図ルート表示機能追加版',
 
     // フォームのデフォルト値
     defaultValues: {

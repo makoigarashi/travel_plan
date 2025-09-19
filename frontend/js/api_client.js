@@ -102,6 +102,22 @@ const API_CLIENT = (function() {
         });
     }
 
+    /**
+     * 2地点間のルート情報を取得します。
+     * @param {{lat: number, lng: number}} origin - 出発地の緯度経度。
+     * @param {{lat: number, lng: number}} destination - 目的地の緯度経度。
+     * @param {string} mode - 移動モード (例: 'walking', 'transit')。
+     * @returns {Promise<{polyline: string}>} ルートのポリラインを含むPromise。
+     */
+    function getDirections(origin, destination, mode) {
+        return $.ajax({
+            url: `${API_ENDPOINT}/api/directions`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ origin, destination, mode })
+        });
+    }
+
     return {
         getPrefectures: getPrefectures,
         getCities: getCities,
@@ -110,6 +126,7 @@ const API_CLIENT = (function() {
         getSettings: getSettings,
         saveSettings: saveSettings,
         geocodeAddress: geocodeAddress,
-        getNearestStationAndWalkTime: getNearestStationAndWalkTime
+        getNearestStationAndWalkTime: getNearestStationAndWalkTime,
+        getDirections: getDirections
     };
 })();

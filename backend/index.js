@@ -110,6 +110,20 @@ apiRouter.post('/nearest-station', async (req, res) => {
     }
 });
 
+apiRouter.post('/directions', async (req, res) => {
+    try {
+        const { origin, destination, mode } = req.body;
+        if (!origin || !destination) {
+            return res.status(400).json({ error: 'Origin and destination are required.' });
+        }
+        const result = await mapService.getDirections(origin, destination, mode);
+        res.status(200).json(result);
+    } catch (error) {
+        console.error('Directions API Error:', error);
+        res.status(500).json({ error: 'Failed to get directions.' });
+    }
+});
+
 app.use('/api', apiRouter);
 
 // 既存のルート (下位互換性のため残す)
