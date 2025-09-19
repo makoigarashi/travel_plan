@@ -98,6 +98,9 @@ test.beforeEach(async ({ page }) => {
 
   // ページの初期化が完了したことを、h1要素が表示されることで確認する
   await expect(page.locator('h1:has-text("旅行プラン・プロンプトジェネレーター")')).toBeVisible({ timeout: 10000 });
+
+  // アプリケーションのJS初期化が完了するのを待つ
+  await expect(page.locator('body')).toHaveAttribute('data-initialized', 'true', { timeout: 10000 });
 });
 
 // --- パーサー単体テスト (UI経由で検証) ---
@@ -119,7 +122,7 @@ test('[UI] 基本情報と1日のシンプルなプランのインポート', as
   const importButton = page.locator('.toggle-import-btn');
   await importButton.waitFor({ state: 'visible' });
   await importButton.click();
-  await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
+  await expect(page.locator('#import-area')).toHaveClass(/shown/);
   await page.locator('#import-prompt').waitFor({ state: 'visible' }); // Add this line
   await page.locator('#import-prompt').fill(input);
   await page.locator('.import-button').click();
@@ -151,7 +154,7 @@ test('[UI] 複雑なプロンプトの読み込みテスト', async ({ page }) =
   const importButton = page.locator('.toggle-import-btn');
   await importButton.waitFor({ state: 'visible' });
   await importButton.click();
-  await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
+  await expect(page.locator('#import-area')).toHaveClass(/shown/);
   await page.locator('#import-prompt').fill(input);
   await page.locator('.import-button').click();
 
@@ -198,7 +201,7 @@ test('[UI] AI提案モードのプロンプトを読み込んでフォームに�
   const importButton = page.locator('.toggle-import-btn');
   await importButton.waitFor({ state: 'visible' });
   await importButton.click();
-  await page.locator('#import-area').waitFor({ state: 'visible' }); // 親要素の可視化を待つ
+  await expect(page.locator('#import-area')).toHaveClass(/shown/);
   await page.locator('#import-prompt').fill(prompt);
   await page.locator('.import-button').click();
 

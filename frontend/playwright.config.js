@@ -5,8 +5,8 @@ export default defineConfig({
   testMatch: '**/*.spec.mjs',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: 2,
-  workers: process.env.CI ? 1 : undefined,
+  retries: 3,
+  workers: 1,
   reporter: [
     ['list'],
     ['html', { open: 'never' }]

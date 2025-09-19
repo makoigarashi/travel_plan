@@ -39,8 +39,8 @@ const AppConfig = {
     DEBUG_FLAG: false,
 
     // アプリケーションのバージョン情報
-    version: '5.2',
-    appName: 'マルチLLM対応版',
+    version: '5.3',
+    appName: 'UI改善・安定化版',
 
     // フォームのデフォルト値
     defaultValues: {
