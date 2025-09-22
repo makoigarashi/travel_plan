@@ -39,8 +39,8 @@ const AppConfig = {
     DEBUG_FLAG: false,
 
     // アプリケーションのバージョン情報
-    version: '5.4',
-    appName: '地図ルート表示機能追加版',
+    version: '5.5',
+    appName: 'AI応答フォーマット指定版',
 
     // フォームのデフォルト値
     defaultValues: {
