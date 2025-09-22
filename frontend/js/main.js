@@ -413,7 +413,7 @@ $(document).ready(function(){
                     day.dayOfWeek = AppConfig.dayNames[date.getDay()];
                 }
                 const allPrefectures = UI.getPrefectures();
-                const prefName = allPrefectures[day.prefCode] || '';
+                const prefName = (allPrefectures[day.prefCode] || {}).name || '';
                 day.area = day.city ? `${prefName} (${day.city})` : prefName;
             });
             markdown = MARKDOWN_GENERATOR.generateStandardMarkdown(templateData);
