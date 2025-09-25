@@ -81,6 +81,61 @@ const apiRouter = express.Router();
 apiRouter.get('/settings', handleGetSettings);
 apiRouter.post('/settings', handlePostSettings);
 
+// --- History API Routes ---
+apiRouter.get('/histories', async (req, res) => {
+    try {
+        const histories = await db.getHistories();
+        res.status(200).json(histories);
+    } catch (error) {
+        console.error('Failed to get histories:', error);
+        res.status(500).json({ error: 'Failed to retrieve histories.' });
+    }
+});
+
+apiRouter.get('/histories/:id', async (req, res) => {
+    try {
+        const history = await db.getHistory(req.params.id);
+        if (history) {
+            res.status(200).json(history);
+        } else {
+            res.status(404).json({ error: 'History not found.' });
+        }
+    } catch (error) {
+        console.error(`Failed to get history ${req.params.id}:`, error);
+        res.status(500).json({ error: 'Failed to retrieve history.' });
+    }
+});
+
+apiRouter.post('/histories', async (req, res) => {
+    try {
+        const { title, markdown } = req.body;
+        if (!title || !markdown) {
+            return res.status(400).json({ error: 'Title and markdown are required.' });
+        }
+        const newHistory = await db.saveHistory(title, markdown);
+        res.status(201).json(newHistory);
+    } catch (error) {
+        console.error('Failed to save history:', error);
+        res.status(500).json({ error: 'Failed to save history.' });
+    }
+});
+
+apiRouter.delete('/histories/:id', async (req, res) => {
+    try {
+        const result = await db.deleteHistory(req.params.id);
+        // SQLiteではchanges、Firestoreではbooleanで判定
+        if (result.deleted) {
+            res.status(200).json({ message: 'History deleted successfully.' });
+        } else {
+            res.status(404).json({ error: 'History not found.' });
+        }
+    } catch (error) {
+        console.error(`Failed to delete history ${req.params.id}:`, error);
+        res.status(500).json({ error: 'Failed to delete history.' });
+    }
+});
+
+
 // 新しい地図関連API
 apiRouter.post('/geocode', async (req, res) => {
     try {

@@ -218,6 +218,12 @@ const MARKDOWN_PARSER = (function() {
     function parse(text) {
         if (!text || !text.trim()) return null;
         text = text.trim();
+
+        // メタデータコメントを削除し、+α提案の有無を本文から判断
+        const metadataRegex = /\n\n<!-- METADATA:({.*}) -->/;
+        text = text.replace(metadataRegex, '').trim();
+        const proactiveSuggestions = text.includes('### +α（プラスアルファ）の魅力的な提案について');
+
         let tokens = marked.lexer(text);
 
         const firstHeadingToken = tokens.find(token => token.type === 'heading');
@@ -225,7 +231,8 @@ const MARKDOWN_PARSER = (function() {
         
         let parsedData = isSuggestionMode ? parseSuggestionMode(tokens) : parseStandardMode(tokens);
         
-        return { ...parsedData, isSuggestionMode };
+        // proactiveSuggestions のみマージ
+        return { ...parsedData, proactiveSuggestions, isSuggestionMode };
     }
 
     return { parse: parse };

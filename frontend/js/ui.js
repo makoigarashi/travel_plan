@@ -13,20 +13,11 @@ const UI = (function() {
 
     // --- Private Functions ---
 
-    /**
-     * Googleのエンコード済みポリライン文字列をデコードする
-     * @param {string} encoded - エンコード済みポリライン
-     * @returns {Array<[number, number]>} 緯度経度の配列
-     */
     function decodePolyline(encoded) {
-        if (!encoded) {
-            return [];
-        }
-
+        if (!encoded) return [];
         let points = [];
         let index = 0, len = encoded.length;
         let lat = 0, lng = 0;
-
         while (index < len) {
             let b, shift = 0, result = 0;
             do {
@@ -36,7 +27,6 @@ const UI = (function() {
             } while (b >= 0x20);
             let dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
             lat += dlat;
-
             shift = 0;
             result = 0;
             do {
@@ -46,15 +36,14 @@ const UI = (function() {
             } while (b >= 0x20);
             let dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
             lng += dlng;
-
             points.push([lat / 1e5, lng / 1e5]);
         }
         return points;
     }
 
     function setupTimeSelects($hourSelect, $minuteSelect) {
-        $hourSelect.append('<option value="">--</option>');
-        $minuteSelect.append('<option value="">--</option>');
+        $hourSelect.empty().append('<option value="">--</option>');
+        $minuteSelect.empty().append('<option value="">--</option>');
         for (let i = 0; i < 24; i++) {
             $hourSelect.append(`<option value="${String(i).padStart(2, '0')}">${String(i).padStart(2, '0')}</option>`);
         }
@@ -93,15 +82,17 @@ const UI = (function() {
         return categories;
     }
 
-    // --- Public Methods ---
-
     const publicMethods = {
         loadTemplates: function() {
             const templateFiles = {
-                dayPlan: 'templates/day-plan.hbs', placeInput: 'templates/place-input.hbs',
-                prefectureList: 'templates/prefecture-list.hbs', cityList: 'templates/city-list.hbs',
+                dayPlan: 'templates/day-plan.hbs',
+                placeInput: 'templates/place-input.hbs',
+                prefectureList: 'templates/prefecture-list.hbs',
+                cityList: 'templates/city-list.hbs',
                 themeSelection: 'templates/theme-selection.hbs',
-                markdown: 'templates/markdown.hbs', suggestionMarkdown: 'templates/suggestion-markdown.hbs'
+                markdown: 'templates/markdown.hbs',
+                suggestionMarkdown: 'templates/suggestion-markdown.hbs',
+                historyList: 'templates/history-list.hbs'
             };
             const partialFiles = {
                 proactiveSuggestionPartial: 'templates/_proactive-suggestion-partial.hbs',
@@ -120,7 +111,7 @@ const UI = (function() {
             prefectures = prefs;
             publicMethods.initializePrefectureModal();
             publicMethods.initializeThemeModal();
-            publicMethods.initializeMaps(); // 追加
+            publicMethods.initializeMaps();
             setupTimeSelects($('#outbound-dep-hour'), $('#outbound-dep-minute'));
             setupTimeSelects($('#outbound-arr-hour'), $('#outbound-arr-minute'));
             setupTimeSelects($('#inbound-dep-hour'), $('#inbound-dep-minute'));
@@ -135,25 +126,22 @@ const UI = (function() {
         },
 
         initializeMaps: function() {
-            // 既存の地図インスタンスを破棄
             for (const dayNum in maps) {
                 if (maps[dayNum]) {
                     maps[dayNum].remove();
                     maps[dayNum] = null;
                 }
             }
-            // マーカーもクリア
             for (const dayNum in markers) {
                 if (markers[dayNum]) {
                     markers[dayNum].forEach(marker => marker.remove());
                     markers[dayNum] = null;
                 }
             }
-            // 各日の地図を初期化
             $('.day-map').each(function() {
                 const dayNum = $(this).attr('id').replace('map-day-', '');
                 const mapId = `map-day-${dayNum}`;
-                const map = L.map(mapId, { zoomControl: false }).setView([35.681236, 139.767125], 5); // 日本の中心
+                const map = L.map(mapId, { zoomControl: false }).setView([35.681236, 139.767125], 5);
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                     attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                 }).addTo(map);
@@ -192,7 +180,7 @@ const UI = (function() {
                     <div id="theme-editor-container"></div>
                     <button type="button" id="add-theme-category-btn" class="mt-2 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">カテゴリを追加</button>
                 </div>
-            `
+            `;
             $('#modal-settings-content').html(modalContent);
             publicMethods.renderThemeEditor(settings.themes);
 
@@ -350,7 +338,7 @@ const UI = (function() {
             if (data.themes && data.themes.length > 0) {
                 const $themesContainer = $newDay.find('.selected-themes-container');
                 data.themes.forEach(themeName => {
-                    const themeId = `theme-${themeName}`.replace(/\s/g, '-'); 
+                    const themeId = `theme-${themeName}`.replace(/\s/g, '-') ;
                     const badgeHtml = `<span class="theme-badge inline-flex items-center bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded-full" data-theme-id="${themeId}">${themeName}</span>`;
                     $themesContainer.append(badgeHtml);
                 });
@@ -406,17 +394,15 @@ const UI = (function() {
             }
             publicMethods.updateEventButtonState($newDay);
 
-            // 新しい日の地図を初期化
             const dayNum = $newDay.data('day');
             const mapId = `map-day-${dayNum}`;
-            const map = L.map(mapId, { zoomControl: false }).setView([35.681236, 139.767125], 5); // 日本の中心
+            const map = L.map(mapId, { zoomControl: false }).setView([35.681236, 139.767125], 5);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             }).addTo(map);
             maps[dayNum] = map;
             markers[dayNum] = [];
 
-            // 地図を更新
             publicMethods.updateMapForDay(dayNum, data.places, restoredPrefCode, data.city);
         },
 
@@ -424,7 +410,6 @@ const UI = (function() {
             const map = maps[dayNum];
             if (!map) return;
 
-            // 既存のマーカーとポリラインをクリア
             if (markers[dayNum]) {
                 markers[dayNum].forEach(marker => marker.remove());
             }
@@ -437,7 +422,6 @@ const UI = (function() {
             let bounds = [];
             const validPlaces = places.filter(p => p.lat && p.lng);
 
-            // 場所のピンを追加
             validPlaces.forEach(place => {
                 const marker = L.marker([place.lat, place.lng]).addTo(map);
                 let popupContent = `<b>${place.name}</b>`;
@@ -450,14 +434,13 @@ const UI = (function() {
                 bounds.push([place.lat, place.lng]);
             });
 
-            // ルートを描画 (場所が2つ以上ある場合)
             if (validPlaces.length > 1) {
                 for (let i = 0; i < validPlaces.length - 1; i++) {
                     const origin = { lat: validPlaces[i].lat, lng: validPlaces[i].lng };
                     const destination = { lat: validPlaces[i+1].lat, lng: validPlaces[i+1].lng };
                     
                     try {
-                        const route = await API_CLIENT.getDirections(origin, destination, 'walking'); // TODO: modeを動的に
+                        const route = await API_CLIENT.getDirections(origin, destination, 'walking');
                         if (route && route.polyline) {
                             const decodedPath = decodePolyline(route.polyline);
                             const routeLine = L.polyline(decodedPath, { color: 'blue' }).addTo(map);
@@ -469,11 +452,10 @@ const UI = (function() {
                 }
             }
 
-            // 地図の表示範囲を調整
             if (bounds.length > 0) {
-                map.fitBounds(L.latLngBounds(bounds).pad(0.2)); // 少し余白を多めに
+                map.fitBounds(L.latLngBounds(bounds).pad(0.2));
             } else if (prefCode) {
-                map.setView([35.681236, 139.767125], 5); // TODO: 都道府県の中心に移動
+                map.setView([35.681236, 139.767125], 5);
             } else {
                 map.setView([35.681236, 139.767125], 5);
             }
@@ -534,6 +516,14 @@ const UI = (function() {
                 $('#trip-remarks').val(data.suggestion.remarks ? data.suggestion.remarks.join('\n') : '');
             }
             $('#ai-suggestion-mode').prop('checked', data.isSuggestionMode || false).trigger('change');
+
+            if (data.suggestionNovelty) {
+                $(`input[name="suggestion-novelty"][value="${data.suggestionNovelty}"]`).prop('checked', true);
+            }
+            if (typeof data.proactiveSuggestions !== 'undefined') {
+                $('#proactive-suggestions').prop('checked', data.proactiveSuggestions);
+            }
+            $('#proactive-suggestions').trigger('change');
         },
 
         showStatusMessage: function(message) {
@@ -569,7 +559,41 @@ const UI = (function() {
             }
         },
 
-        getPrefectures: () => AppConfig.geoData, // AppConfigから都道府県データを返すように変更
+        renderHistoryList: function(histories) {
+            const formattedHistories = histories.map(h => {
+                const d = new Date(h.createdAt);
+                return {
+                    ...h,
+                    formattedCreatedAt: `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`
+                };
+            });
+            const html = templates.historyList({ histories: formattedHistories });
+            $('#modal-history-content').html(html);
+        },
+
+        getHistoryTitle: function() {
+            const title = $('#history-title-input').val().trim();
+            if (!title) {
+                alert('タイトルを入力してください。');
+                return null;
+            }
+            return title;
+        },
+
+        clearHistoryTitle: function() {
+            $('#history-title-input').val('');
+        },
+
+        removeHistoryItemFromUI: function(id) {
+            $(`.history-item[data-history-id="${id}"]`).fadeOut(300, function() { 
+                $(this).remove(); 
+                if ($('#modal-history-content .history-item').length === 0) {
+                    $('#modal-history-content').html('<p class="text-center text-gray-500 py-8">保存された履歴はありません。</p>');
+                }
+            });
+        },
+
+        getPrefectures: () => AppConfig.geoData,
         getTemplates: () => templates
     };
 

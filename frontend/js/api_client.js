@@ -118,15 +118,44 @@ const API_CLIENT = (function() {
         });
     }
 
+    // --- History Methods ---
+    function getHistories() {
+        return $.getJSON(`${API_ENDPOINT}/api/histories`);
+    }
+
+    function getHistory(id) {
+        return $.getJSON(`${API_ENDPOINT}/api/histories/${id}`);
+    }
+
+    function saveHistory(title, markdown) {
+        return $.ajax({
+            url: `${API_ENDPOINT}/api/histories`,
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({ title, markdown })
+        });
+    }
+
+    function deleteHistory(id) {
+        return $.ajax({
+            url: `${API_ENDPOINT}/api/histories/${id}`,
+            type: 'DELETE'
+        });
+    }
+
     return {
-        getPrefectures: getPrefectures,
-        getCities: getCities,
-        executeGemini: executeGemini,
-        executeMistral: executeMistral, // 追加
-        getSettings: getSettings,
-        saveSettings: saveSettings,
-        geocodeAddress: geocodeAddress,
-        getNearestStationAndWalkTime: getNearestStationAndWalkTime,
-        getDirections: getDirections
+        getPrefectures,
+        getCities,
+        executeGemini,
+        executeMistral,
+        getSettings,
+        saveSettings,
+        geocodeAddress,
+        getNearestStationAndWalkTime,
+        getDirections,
+        getHistories,
+        getHistory,
+        saveHistory,
+        deleteHistory
     };
 })();

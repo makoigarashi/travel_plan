@@ -1,37 +1,63 @@
-const path = require('path'); // 追加
+const path = require('path');
 const FirestoreDatabase = require('./database/FirestoreDatabase');
 const SQLiteDatabase = require('./database/SQLiteDatabase');
 
-const DB_FILE = path.join(__dirname, 'database.sqlite'); // 追加
+const DB_FILE = path.join(__dirname, 'database.sqlite');
 
 let activeDatabase;
 
-async function initialize(productionMode) { // dbFileを削除
+async function initialize(productionMode) {
     if (productionMode) {
         activeDatabase = new FirestoreDatabase();
-        await activeDatabase.initialize(); // Firestoreはconfig不要
+        await activeDatabase.initialize();
     } else {
         activeDatabase = new SQLiteDatabase();
-        await activeDatabase.initialize(DB_FILE); // DB_FILEを使用
+        await activeDatabase.initialize(DB_FILE);
+    }
+}
+
+function ensureDbInitialized() {
+    if (!activeDatabase) {
+        throw new Error('Database not initialized. Call initialize() first.');
     }
 }
 
 async function getSettings() {
-    if (!activeDatabase) {
-        throw new Error('Database not initialized. Call initialize() first.');
-    }
+    ensureDbInitialized();
     return activeDatabase.getSettings();
 }
 
 async function saveSettings(settings) {
-    if (!activeDatabase) {
-        throw new Error('Database not initialized. Call initialize() first.');
-    }
+    ensureDbInitialized();
     return activeDatabase.saveSettings(settings);
+}
+
+async function getHistories() {
+    ensureDbInitialized();
+    return activeDatabase.getHistories();
+}
+
+async function getHistory(id) {
+    ensureDbInitialized();
+    return activeDatabase.getHistory(id);
+}
+
+async function saveHistory(title, markdown) {
+    ensureDbInitialized();
+    return activeDatabase.saveHistory(title, markdown);
+}
+
+async function deleteHistory(id) {
+    ensureDbInitialized();
+    return activeDatabase.deleteHistory(id);
 }
 
 module.exports = {
     initialize,
     getSettings,
-    saveSettings
+    saveSettings,
+    getHistories,
+    getHistory,
+    saveHistory,
+    deleteHistory
 };
