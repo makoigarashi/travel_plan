@@ -19,7 +19,10 @@
         <div class="text-center mb-8 relative">
             <h1 class="text-3xl font-bold text-blue-600 mb-1">旅行プラン・プロンプトジェネレーター</h1>
             <p class="text-sm text-gray-500 italic" id="version-info"></p>
-            <button type="button" id="open-settings-modal-btn" class="absolute top-0 right-0 p-2 text-2xl hover:bg-gray-200 rounded-full" aria-label="設定">⚙️</button>
+            <div class="absolute top-0 right-0 flex items-center">
+                <button type="button" id="open-history-modal-btn" class="p-2 text-2xl hover:bg-gray-200 rounded-full" aria-label="履歴">📖</button>
+                <button type="button" id="open-settings-modal-btn" class="p-2 text-2xl hover:bg-gray-200 rounded-full" aria-label="設定">⚙️</button>
+            </div>
             <p id="save-status" class="text-green-600 font-semibold mt-2 h-6"></p> <!-- メッセージ表示領域 -->
         </div>
 
@@ -169,7 +172,7 @@
             
             <fieldset id="ai-instruction-fieldset" class="border border-gray-300 rounded-md p-6 mb-6">
                 <legend class="text-lg font-bold text-blue-600 px-2">AIへの特別指示</legend>
-                 <label class="flex items-center font-normal cursor-pointer">
+                 <label class="flex items-center font-normal cursor-pointer mb-4">
                     <input type="checkbox" id="proactive-suggestions" class="mr-3 h-4 w-4" checked>
                     AIからの魅力的な追加提案（+α）を希望する
                 </label>
@@ -184,7 +187,10 @@
             <h2 class="text-2xl font-bold text-blue-600 text-center mt-0 pb-2 border-b-2 border-blue-600">生成されたプロンプト</h2>
             <textarea id="output-markdown" class="w-full p-2 border border-gray-300 rounded-md min-h-[300px] bg-gray-50 mt-6 focus:ring focus:ring-blue-500 focus:border-blue-500" readonly></textarea>
             <p id="markdown-status" class="text-sm text-gray-500 mt-2 text-center"></p>
-            <button type="button" class="w-full mt-4 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors copy-button">クリップボードにコピー</button>
+            <div class="flex gap-2 mt-4">
+                <button type="button" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg transition-colors copy-button">クリップボードにコピー</button>
+                <button type="button" id="save-history-btn" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">DBに保存</button>
+            </div>
             
             <div class="mt-6 space-y-2">
                 <button type="button" id="execute-gemini-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors" disabled>Geminiで実行</button>
@@ -252,6 +258,40 @@
                     <button class="modal__btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors" id="save-settings-btn">保存して閉じる</button>
                     <button class="modal__btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-colors" data-micromodal-close aria-label="閉じる">キャンセル</button>
                 </footer>
+            </div>
+        </div>
+    </div>
+
+    <!-- ★★★ 履歴関連モーダルを追加 ★★★ -->
+    <div class="modal micromodal-slide" id="modal-save-history" aria-hidden="true">
+        <div class="modal__overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" tabindex="-1" data-micromodal-close>
+            <div class="modal__container bg-white p-5 w-11/12 max-w-md rounded-lg shadow-xl" role="dialog" aria-modal="true" aria-labelledby="modal-save-history-title">
+                <header class="modal__header flex justify-between items-center border-b border-gray-300 pb-4">
+                    <h2 class="modal__title m-0 text-xl font-bold" id="modal-save-history-title">履歴に名前を付けて保存</h2>
+                    <button class="modal__close bg-transparent border-0 cursor-pointer w-8 h-8 relative" aria-label="閉じる" data-micromodal-close></button>
+                </header>
+                <main class="modal__content mt-6" id="modal-save-history-content">
+                    <label for="history-title-input" class="block mb-2 font-semibold">履歴のタイトル</label>
+                    <input type="text" id="history-title-input" class="w-full p-2 border border-gray-300 rounded-md" placeholder="例：2025年夏の沖縄旅行">
+                </main>
+                <footer class="modal__footer mt-6 pt-4 border-t border-gray-300 text-right space-x-2">
+                    <button class="modal__btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg" id="confirm-save-history-btn">保存</button>
+                    <button class="modal__btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg" data-micromodal-close>キャンセル</button>
+                </footer>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal micromodal-slide" id="modal-history" aria-hidden="true">
+        <div class="modal__overlay fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" tabindex="-1" data-micromodal-close>
+            <div class="modal__container bg-white p-5 w-11/12 max-w-3xl max-h-[90vh] rounded-lg shadow-xl flex flex-col" role="dialog" aria-modal="true" aria-labelledby="modal-history-title">
+                <header class="modal__header flex justify-between items-center border-b border-gray-300 pb-4">
+                    <h2 class="modal__title m-0 text-xl font-bold" id="modal-history-title">保存した履歴</h2>
+                    <button class="modal__close bg-transparent border-0 cursor-pointer w-8 h-8 relative" aria-label="閉じる" data-micromodal-close></button>
+                </header>
+                <main class="modal__content mt-4 flex-grow overflow-y-auto" id="modal-history-content">
+                    <!-- 履歴リストがここに挿入されます -->
+                </main>
             </div>
         </div>
     </div>

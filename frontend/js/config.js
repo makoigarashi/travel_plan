@@ -39,8 +39,8 @@ const AppConfig = {
     DEBUG_FLAG: false,
 
     // アプリケーションのバージョン情報
-    version: '5.5',
-    appName: 'AI応答フォーマット指定版',
+    version: '5.6',
+    appName: 'Markdown履歴保存機能追加版',
 
     // フォームのデフォルト値
     defaultValues: {
