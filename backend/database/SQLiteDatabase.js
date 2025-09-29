@@ -1,4 +1,5 @@
 const sqlite3 = require('sqlite3').verbose();
+const { v4: uuidv4 } = require('uuid'); // 追加
 
 class SQLiteDatabase /* implements IDatabase */ {
     constructor() {
@@ -15,6 +16,7 @@ class SQLiteDatabase /* implements IDatabase */ {
             console.log('Connected to the local SQLite database.');
         });
 
+        // settingsテーブルの作成
         await new Promise((resolve, reject) => {
             this.db.run(`CREATE TABLE IF NOT EXISTS settings (
                 key TEXT PRIMARY KEY,
@@ -22,9 +24,26 @@ class SQLiteDatabase /* implements IDatabase */ {
             )`, (err) => {
                 if (err) {
                     console.error('FATAL ERROR: Could not create settings table.', err.message);
-                    process.exit(1);
+                    return reject(err); // rejectを返すように修正
                 }
                 console.log("SQLite 'settings' table is ready.");
+                resolve();
+            });
+        });
+
+        // historiesテーブルの作成
+        await new Promise((resolve, reject) => {
+            this.db.run(`CREATE TABLE IF NOT EXISTS histories (
+                id TEXT PRIMARY KEY,
+                title TEXT NOT NULL,
+                markdown TEXT NOT NULL,
+                createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+            )`, (err) => {
+                if (err) {
+                    console.error('FATAL ERROR: Could not create histories table.', err.message);
+                    return reject(err); // rejectを返すように修正
+                }
+                console.log("SQLite 'histories' table is ready.");
                 resolve();
             });
         });
@@ -60,6 +79,50 @@ class SQLiteDatabase /* implements IDatabase */ {
             });
         }
         await new Promise((resolve) => stmt.finalize(resolve));
+    }
+
+    // --- History Methods ---
+
+    async getHistories() {
+        return new Promise((resolve, reject) => {
+            this.db.all("SELECT id, title, createdAt FROM histories ORDER BY createdAt DESC", [], (err, rows) => {
+                if (err) return reject(err);
+                resolve(rows);
+            });
+        });
+    }
+
+    async getHistory(id) {
+        return new Promise((resolve, reject) => {
+            this.db.get("SELECT * FROM histories WHERE id = ?", [id], (err, row) => {
+                if (err) return reject(err);
+                resolve(row);
+            });
+        });
+    }
+
+    async saveHistory(title, markdown) {
+        const newId = uuidv4();
+        return new Promise((resolve, reject) => {
+            const stmt = this.db.prepare("INSERT INTO histories (id, title, markdown) VALUES (?, ?, ?)");
+            stmt.run(newId, title, markdown, function(err) {
+                if (err) return reject(err);
+                resolve({ id: newId, title, markdown });
+            });
+            stmt.finalize();
+        });
+    }
+
+    async deleteHistory(id) {
+        return new Promise((resolve, reject) => {
+            const stmt = this.db.prepare("DELETE FROM histories WHERE id = ?");
+            stmt.run(id, function(err) {
+                if (err) return reject(err);
+                // 削除された行数を返す
+                resolve({ deleted: this.changes });
+            });
+            stmt.finalize();
+        });
     }
 }
 module.exports = SQLiteDatabase;

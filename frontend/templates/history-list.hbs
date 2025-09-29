@@ -1,0 +1,18 @@
+{{#if histories}}
+    <ul class="space-y-3">
+        {{#each histories}}
+        <li class="p-3 border rounded-lg flex items-center justify-between hover:bg-gray-50 transition-colors history-item" data-history-id="{{this.id}}">
+            <div>
+                <p class="font-bold text-gray-800">{{this.title}}</p>
+                <p class="text-xs text-gray-500">保存日時: {{this.formattedCreatedAt}}</p>
+            </div>
+            <div class="space-x-2 flex-shrink-0">
+                <button type="button" class="load-history-btn bg-green-500 hover:bg-green-600 text-white font-bold py-1 px-3 rounded text-sm" data-id="{{this.id}}">読込</button>
+                <button type="button" class="delete-history-btn bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded text-sm" data-id="{{this.id}}">削除</button>
+            </div>
+        </li>
+        {{/each}}
+    </ul>
+{{else}}
+    <p class="text-center text-gray-500 py-8">保存された履歴はありません。</p>
+{{/if}}

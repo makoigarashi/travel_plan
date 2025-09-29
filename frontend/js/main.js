@@ -13,6 +13,8 @@ $(document).ready(function(){
     let currentCityButton = null;
     let currentThemeButton = null;
 
+    let simplemde; // SimpleMDEインスタンスを保持する変数
+
     /**
      * アプリケーションを初期化します。
      * テンプレート読み込み、データ取得、イベントハンドラ設定などを行います。
@@ -117,6 +119,13 @@ $(document).ready(function(){
         // --- 設定関連 ---
         $('#open-settings-modal-btn').on('click', () => MicroModal.show('modal-settings'));
         $('#save-settings-btn').on('click', handleSaveSettings);
+
+        // --- 履歴関連 ---
+        $('#open-history-modal-btn').on('click', handleOpenHistoryModal);
+        $('#save-history-btn').on('click', handleSaveHistory);
+        $('#confirm-save-history-btn').on('click', handleConfirmSaveHistory);
+        $('#modal-history-content').on('click', '.load-history-btn', handleLoadHistory);
+        $('#modal-history-content').on('click', '.delete-history-btn', handleDeleteHistory);
 
         // --- その他 ---
         $('#ai-suggestion-mode').on('change', handleSuggestionModeChange);
@@ -379,8 +388,6 @@ $(document).ready(function(){
         }
     }
 
-    let simplemde; // SimpleMDEインスタンスを保持する変数
-
     function handleGenerateMarkdown(){
         let markdown;
         const isSuggestionMode = $('#ai-suggestion-mode').is(':checked');
@@ -490,6 +497,81 @@ $(document).ready(function(){
             .always(function() {
                 UI.updateLLMButtonState(true);
             });
+    }
+
+    // --- History Event Handlers ---
+    async function handleOpenHistoryModal() {
+        try {
+            const histories = await API_CLIENT.getHistories();
+            UI.renderHistoryList(histories);
+            MicroModal.show('modal-history');
+        } catch (error) {
+            console.error('Failed to get histories:', error);
+            alert('履歴の取得に失敗しました。');
+        }
+    }
+
+    function handleSaveHistory() {
+        console.log('Inspecting UI object before calling clearHistoryTitle:', UI);
+        const markdown = simplemde ? simplemde.value() : $('#output-markdown').val();
+        if (!markdown.trim()) {
+            alert('保存するMarkdownがありません。');
+            return;
+        }
+        UI.clearHistoryTitle();
+        MicroModal.show('modal-save-history');
+    }
+
+    async function handleConfirmSaveHistory() {
+        const title = UI.getHistoryTitle();
+        if (!title) return;
+
+        const markdown = simplemde ? simplemde.value() : $('#output-markdown').val();
+
+        try {
+            await API_CLIENT.saveHistory(title, markdown);
+            MicroModal.close('modal-save-history');
+            UI.showStatusMessage('履歴に保存しました。');
+        } catch (error) {
+            console.error('Failed to save history:', error);
+            alert('履歴の保存に失敗しました。');
+        }
+    }
+
+    async function handleLoadHistory() {
+        const historyId = $(this).data('id');
+        try {
+            const history = await API_CLIENT.getHistory(historyId);
+            if (history && history.markdown) {
+                const data = MARKDOWN_PARSER.parse(history.markdown);
+                if (data) {
+                    UI.populateFormFromData(data);
+                    UI.showStatusMessage(`履歴「${history.title}」を読み込みました。`);
+                    MicroModal.close('modal-history');
+                } else {
+                    alert('履歴データの解析に失敗しました。');
+                }
+            } else {
+                alert('履歴データの取得に失敗しました。');
+            }
+        } catch (error) {
+            console.error('Failed to load history:', error);
+            alert('履歴の読み込み中にエラーが発生しました。');
+        }
+    }
+
+    async function handleDeleteHistory() {
+        const historyId = $(this).data('id');
+        if (confirm('この履歴を本当に削除しますか？')) {
+            try {
+                await API_CLIENT.deleteHistory(historyId);
+                UI.removeHistoryItemFromUI(historyId);
+                UI.showStatusMessage('履歴を削除しました。');
+            } catch (error) {
+                console.error('Failed to delete history:', error);
+                alert('履歴の削除に失敗しました。');
+            }
+        }
     }
 
     initialize();
