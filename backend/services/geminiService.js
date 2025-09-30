@@ -6,7 +6,7 @@ const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 /**
  * Gemini APIクライアントを初期化します。
  */
-const GEMINI_MODEL_NAME = 'gemini-1.5-flash-latest'; // 追加
+const GEMINI_MODEL_NAME = 'gemini-2.5-flash'; // 追加
 
 function initializeGemini() {
     if (GEMINI_API_KEY) {
